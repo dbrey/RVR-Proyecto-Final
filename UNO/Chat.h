@@ -18,36 +18,43 @@
  *  +-------------------+
  *  | Nick: char[8]     | Nick incluido el char terminación de cadena '\0'
  *  +-------------------+
- *  |                   |
- *  | Mensaje: char[80] | Mensaje incluido el char terminación de cadena '\0'
- *  |                   |
+ *  | Tipo: uint8_t     | Número de la carta (0-9, 10 es el +2 y 11 es el cambio de color)
+ *  +-------------------+
+ *  | Tipo: uint8_t     | Color de la carta (0 (azul), 1 (amarillo), 2 (rojo), 3 (verde))
+ *  +-------------------+
+ *  | Tipo: bool        | Le toca jugar o no
  *  +-------------------+
  *
  */
-class ChatMessage: public Serializable
+class ChatMessage : public Serializable
 {
 public:
     static const size_t MESSAGE_SIZE = sizeof(char) * 88 + sizeof(uint8_t);
 
     enum MessageType
     {
-        LOGIN   = 0,
+        LOGIN = 0,
         MESSAGE = 1,
-        LOGOUT  = 2
+        LOGOUT = 2,
+        BEGIN = 3,
+        END = 4
     };
 
-    ChatMessage(){};
+    ChatMessage() {};
 
-    ChatMessage(const std::string& n, const std::string& m):nick(n),message(m){};
+    ChatMessage(const std::string& n, const std::string& m) :nick(n), message(m) {};
 
     void to_bin();
 
-    int from_bin(char * bobj);
+    int from_bin(char* bobj);
 
     uint8_t type;
 
     std::string nick;
-    std::string message;
+    uint8_t number;
+    uint8_t color;
+    bool turn;
+    std::string message; // Esto hay que quitarlo
 };
 
 // -----------------------------------------------------------------------------
@@ -59,7 +66,7 @@ public:
 class ChatServer
 {
 public:
-    ChatServer(const char * s, const char * p): socket(s, p)
+    ChatServer(const char* s, const char* p) : socket(s, p)
     {
         socket.bind();
     };
@@ -76,6 +83,11 @@ private:
      *  su socket
      */
     std::vector<std::unique_ptr<Socket>> clients;
+
+    /**
+     * Le toca jugar a clients[turn]
+     */
+    uint8_t turn;
 
     /**
      * Socket del servidor
@@ -97,8 +109,8 @@ public:
      * @param p puerto del servidor
      * @param n nick del usuario
      */
-    ChatClient(const char * s, const char * p, const char * n):socket(s, p),
-        nick(n){};
+    ChatClient(const char* s, const char* p, const char* n) :socket(s, p),
+        nick(n) {};
 
     /**
      *  Envía el mensaje de login al servidor
@@ -123,6 +135,10 @@ public:
     void net_thread();
 
 private:
+    struct card {
+        uint8_t number;
+        uint8_t color;
+    };
 
     /**
      * Socket para comunicar con el servidor
@@ -133,5 +149,30 @@ private:
      * Nick del usuario
      */
     std::string nick;
+
+    /**
+     * Para saber si se está jugando o no
+     */
+    bool playing;
+
+    /**
+     * Para saber si te toca jugar o no
+     */
+    bool yourTurn;
+
+    /**
+     * Carta del centro
+     */
+    card topCard;
+
+    /**
+     * Vector de mis cartas
+     */
+    std::vector<card> myCards;
+
+    /**
+     * Para seleccionar cartas
+     */
+    uint8_t cardPointer;
 };
 

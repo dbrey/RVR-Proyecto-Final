@@ -66,15 +66,17 @@ void ChatServer::do_messages()
             std::cout << "LOGOUT " << *messageSocket << "\n";
             auto it = clients.begin();
             while(it != clients.end() && !(**it == *messageSocket)) ++it;
-            if(it == clients.end()) std::cout << "Client not found";
+            if(it == clients.end()) std::cout << "Client not found\n";
             else clients.erase(it);
         }
 
         // - MESSAGE: Reenviar el mensaje a todos los clientes (menos el emisor)
         else if(message.type == message.MESSAGE){
+            // Aumenta turn //////////////////////////////////////////////////////////////////////////////////////////
             std::cout << "MESSAGE " << *messageSocket << "\n";
             for(auto it = clients.begin(); it != clients.end(); ++it){
                 if(!(**it == *messageSocket)) socket.send(message, **it);
+                // message.turn se pondrá a true o false dependiendo de si it es clients[turn] ///////////////////////
             }
         }
     }
@@ -106,18 +108,27 @@ void ChatClient::logout()
 
 void ChatClient::input_thread()
 {
-    while (true)
+    bool chat = true;
+    while (chat)
     {
+        // Leer input (flechas o enter) ////////////////////////////////////////////////////////////////////////
+
         // Leer stdin con std::getline
         std::string msg;
         std::getline(std::cin, msg);
 
-        // Enviar al servidor usando socket
-        ChatMessage em(nick, msg);
-        em.type = ChatMessage::MESSAGE;
+        if(msg == "exit"){
+            chat = false;
+        }
+        else{
+            // Enviar al servidor usando socket
+            ChatMessage em(nick, msg);
+            em.type = ChatMessage::MESSAGE;
 
-        socket.send(em, socket);
+            socket.send(em, socket);
+        }
     }
+    logout();
 }
 
 void ChatClient::net_thread()
@@ -128,6 +139,9 @@ void ChatClient::net_thread()
     {
         //Recibir Mensajes de red
         socket.recv(em, mSocket);
+
+        // Si la carta es +2 llama 2 veces a CogerCarta ///////////////////////////////////////////////////////////////
+        // Si mensaje == END -> playing = false ///////////////////////////////////////////////////////////////////////
 
         //Mostrar en pantalla el mensaje de la forma "nick: mensaje"
         std::cout << em.nick << ": " << em.message << "\n";
