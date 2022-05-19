@@ -140,11 +140,71 @@ void ChatClient::net_thread()
         //Recibir Mensajes de red
         socket.recv(em, mSocket);
 
-        // Si la carta es +2 llama 2 veces a CogerCarta ///////////////////////////////////////////////////////////////
-        // Si mensaje == END -> playing = false ///////////////////////////////////////////////////////////////////////
+        // Si la carta es +2 llama 2 veces a CogerCarta 
+        if(topCard.number == 10) // Cuidado que esto no se llame infinito hasta enviar la siguiente carta
+        {
+            myCards.push_back(generateCard());
+            myCards.push_back(generateCard());
+        }
+
+        // Si mensaje == END -> playing = false
+        if(em.type == ChatMessage::END)
+        {
+            playing = false;
+        }
 
         //Mostrar en pantalla el mensaje de la forma "nick: mensaje"
         std::cout << em.nick << ": " << em.message << "\n";
     }
 }
 
+card ChatClient::generateCard()
+{
+    // 0-11 value of the card, 0-3 value of the color
+    card aux = {rand()%11,rand()%3};
+    return aux;
+}
+
+void ChatClient::throwCard()
+{
+    if(checkCurrentCard(myCards[cardPointer]))
+    {
+        topCard = myCards[cardPointer];
+    }
+}
+
+bool ChatClient::checkCurrentCard(card nextCard)
+{
+    if(nextCard.number == 11)
+    {
+        
+        // Seleccionamos color preguntandole por input (y asi, automaticamente se lanza con el color ya elegido)
+        std::cout << "Selecciona un color (azul, amarillo, rojo, verde) :" << "\n";
+
+        std::string msg;
+        std::getline(std::cin, msg);
+
+        if(msg == "azul")
+        {
+            nextCard.color = 0;
+        }
+        else if(msg == "amarillo")
+        {
+            nextCard.color = 1;
+        }
+        else if(msg == "rojo")
+        {
+            nextCard.color = 2;
+        }
+        else if(msg == "verde")
+        {
+            nextCard.color = 3;
+        }
+        return true;
+    }
+    // If color or number is the same, player can throw the card
+    else if((topCard.color == nextCard.color) || (topCard.number == nextCard.number))
+    {
+        return true;
+    }
+}

@@ -9,6 +9,12 @@ int main(int argc, char **argv)
 
     ec.login();
 
+    // Repartimos inicialmente 7 cartas al jugador
+    for(int i = 0; i < 7; i++)
+    {
+        ec.myCards.push_back(ec.generateCard());
+    }
+
     ec.input_thread();
 }
 

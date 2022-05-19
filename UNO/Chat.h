@@ -26,6 +26,12 @@
  *  +-------------------+
  *
  */
+
+struct card {
+        uint8_t number;
+        uint8_t color;
+    };
+
 class ChatMessage : public Serializable
 {
 public:
@@ -103,7 +109,44 @@ private:
  */
 class ChatClient
 {
+private:
+
+    /**
+     * Socket para comunicar con el servidor
+     */
+    Socket socket;
+
+    /**
+     * Nick del usuario
+     */
+    std::string nick;
+
+    /**
+     * Para saber si se está jugando o no
+     */
+    bool playing;
+
+    /**
+     * Para saber si te toca jugar o no
+     */
+    bool yourTurn;
+
+    /**
+     * Carta del centro
+     */
+    card topCard;
+
+    /**
+     * Para seleccionar cartas
+     */
+    uint8_t cardPointer;
+
 public:
+    /**
+     * Vector de mis cartas
+     */
+    std::vector<card> myCards;
+
     /**
      * @param s dirección del servidor
      * @param p puerto del servidor
@@ -134,45 +177,20 @@ public:
      */
     void net_thread();
 
-private:
-    struct card {
-        uint8_t number;
-        uint8_t color;
-    };
+    /**
+     *  Genera una carta de color y valor random
+     */
+    card generateCard();
 
     /**
-     * Socket para comunicar con el servidor
+     *  Genera una carta de color y valor random
      */
-    Socket socket;
+    void throwCard();
 
     /**
-     * Nick del usuario
+     *  Comprueba si la carta a lanzar es compatible
      */
-    std::string nick;
+    bool checkCurrentCard(card nextCart);
 
-    /**
-     * Para saber si se está jugando o no
-     */
-    bool playing;
-
-    /**
-     * Para saber si te toca jugar o no
-     */
-    bool yourTurn;
-
-    /**
-     * Carta del centro
-     */
-    card topCard;
-
-    /**
-     * Vector de mis cartas
-     */
-    std::vector<card> myCards;
-
-    /**
-     * Para seleccionar cartas
-     */
-    uint8_t cardPointer;
 };
 
