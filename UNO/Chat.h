@@ -190,7 +190,14 @@ public:
     /**
      *  Comprueba si la carta a lanzar es compatible
      */
-    bool checkCurrentCard(card nextCart);
+    bool checkCurrentCard(card nextCard);
+
+    /**
+     *  Establece si es o no el turno del jugador
+     */
+    void setTurn(bool current);
+
+
 
 };
 

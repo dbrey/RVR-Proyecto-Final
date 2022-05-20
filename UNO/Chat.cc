@@ -40,6 +40,9 @@ int ChatMessage::from_bin(char * bobj)
 
 void ChatServer::do_messages()
 {
+    // Inicializamos la partida con el turno del primer jugador
+    turn = 0;
+
     while (true)
     {
         /*
@@ -68,16 +71,41 @@ void ChatServer::do_messages()
             while(it != clients.end() && !(**it == *messageSocket)) ++it;
             if(it == clients.end()) std::cout << "Client not found\n";
             else clients.erase(it);
+
+            // En caso de que el ultimo jugador se vaya en su turno, nos aseguramos de que se pase el turno al siguiente jugador
+            // (Ejemplo turno 4, pero jugador 4 se va. Si pasa a haber 3 jugadores solo, entonces pasamos automaticamente el turno)
+            if(turn >= clients.size())
+            {
+                turn = 0;
+                clients[turn].get()->setTurn(true);
+            }
         }
 
         // - MESSAGE: Reenviar el mensaje a todos los clientes (menos el emisor)
         else if(message.type == message.MESSAGE){
-            // Aumenta turn //////////////////////////////////////////////////////////////////////////////////////////
+            
+            // Comunicamos al jugador actual que su turno se ha terminado y que le toca al siguiente
+            // Tener el turno desactivado simplemente impide que pueda enviar un tipo MESSAGE pero puede salir de la partida
+            clients[turn].get()->setTurn(false);
+            turn++;
+            if(turn >= clients.size())
+            {
+                turn = 0;
+            }
+            clients[turn].get()->setTurn(true);
+            //------------------------------------------------------------------
+
+
             std::cout << "MESSAGE " << *messageSocket << "\n";
             for(auto it = clients.begin(); it != clients.end(); ++it){
-                if(!(**it == *messageSocket)) socket.send(message, **it);
-                // message.turn se pondrá a true o false dependiendo de si it es clients[turn] ///////////////////////
+                if(!(**it == *messageSocket)) socket.send(message, **it);                
             }
+        }
+
+        else if(message.type == message.END)
+        {
+
+
         }
     }
 }
@@ -121,11 +149,19 @@ void ChatClient::input_thread()
             chat = false;
         }
         else{
-            // Enviar al servidor usando socket
-            ChatMessage em(nick, msg);
-            em.type = ChatMessage::MESSAGE;
+            // Si es el turno del jugador, enviamos mensaje
+            if(socket.getTurn())
+            {
 
-            socket.send(em, socket);
+                ///// Si la ultima carta se lanza, mandar un mensaje tipo END
+                
+
+                // Enviar al servidor usando socket
+                ChatMessage em(nick, msg);
+                em.type = ChatMessage::MESSAGE;
+                socket.send(em, socket);
+            }
+            
         }
     }
     logout();

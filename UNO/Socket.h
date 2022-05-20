@@ -112,6 +112,13 @@ public:
 
     friend bool operator== (const Socket &s1, const Socket &s2);
 
+    /**
+     *  Prepara el turno del jugador
+     */
+    void setTurn(bool current);
+
+    bool getTurn();
+
 protected:
 
     /**
@@ -124,6 +131,11 @@ protected:
      */
     struct sockaddr sa;
     socklen_t       sa_len;
+
+    /**
+     *  Turno del jugador
+     */
+    bool turn;
 };
 
 #endif /* SOCKET_H_ */
