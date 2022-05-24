@@ -32,28 +32,29 @@ struct card {
     uint8_t color;
     void print() {
         char c;
-        if (number < 10) c = (char)number;
+        if (number < 10) c = number + '0'; // Si no pones el 0 te coge el caracter ASCII nº number
         else if (number == 10) c = '+';
         else c = '-';
 
         switch (color)
         {
         case 0:
-            std::cout << "\033[34;40m" + c;
+            printf("\033[36;40m");
             break;
         case 1:
-            std::cout << "\033[33;40m" + c;
+            printf("\033[33;40m");
             break;
         case 2:
-            std::cout << "\033[31;40m" + c;
+            printf("\033[31;40m");
             break;
         case 3:
-            std::cout << "\033[32;40m" + c;
+            printf("\033[32;40m");
             break;
         default:
             break;
         }
-        std::cout << "\033[0m    ";
+        printf(&c);
+        printf("\033[0m  ");
     }
 };
 
@@ -166,6 +167,17 @@ private:
      */
     uint8_t cardPointer;
 
+
+    /**
+     *  Imprime las reglas del juego
+     */
+    void printRules();
+
+    /**
+     *  Imprime las reglas del juego
+     */
+    void printCards(uint8_t pointer);
+
 public:
     /**
      * Vector de mis cartas
@@ -178,7 +190,9 @@ public:
      * @param n nick del usuario
      */
     ChatClient(const char* s, const char* p, const char* n) :socket(s, p),
-        nick(n) {};
+        nick(n) {
+        srand((unsigned int)time(NULL)); // Semilla para números aleatorios de verdad (sino son siempre los mismos)
+    };
 
     /**
      *  Envía el mensaje de login al servidor
@@ -221,15 +235,5 @@ public:
      *  Establece si es o no el turno del jugador
      */
     void setTurn(bool current);
-
-    /**
-     *  Imprime las reglas del juego
-     */
-    void printRules();
-
-    /**
-     *  Imprime las reglas del juego
-     */
-    void printCards(uint8_t pointer);
 };
 

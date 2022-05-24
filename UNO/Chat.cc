@@ -122,8 +122,15 @@ void ChatClient::login()
 
     socket.send(em, socket);
     
+    ///////////////////////////////////////////////////////////////// Código provisional para ver que funciona:
+    for(int i = 0; i < 7; i++)
+    {
+        myCards.push_back(generateCard());
+    }
+    system("clear"); // Comando para borrar la pantalla
     std::cout << "Acabas de unirte a la partida " << nick << "\n";
     printRules();
+    printCards(0);
 }
 
 void ChatClient::logout()
@@ -260,10 +267,12 @@ void ChatClient::printCards(uint8_t pointer){
     std::cout << "MAZO: ";
     topCard.print(); 
     std::cout << "\n\n";
-    
+
     for(card c : myCards) c.print();
+    std::cout << "\n";
     for(int i = 0; i < myCards.size(); i++) {
-        if(i != pointer) std::cout << "     ";
-        else std::cout << "*     ";
+        if(i != pointer) std::cout << "   ";
+        else std::cout << "*  ";
     }
+    std::cout << "\n";
 }
