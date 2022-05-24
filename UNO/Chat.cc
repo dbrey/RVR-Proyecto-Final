@@ -121,6 +121,9 @@ void ChatClient::login()
     em.type = ChatMessage::LOGIN;
 
     socket.send(em, socket);
+    
+    std::cout << "Acabas de unirte a la partida " << nick << "\n";
+    printRules();
 }
 
 void ChatClient::logout()
@@ -153,11 +156,13 @@ void ChatClient::input_thread()
             if(socket.getTurn())
             {
 
+                ChatMessage em(nick, msg);
                 ///// Si la ultima carta se lanza, mandar un mensaje tipo END
-                
+                if(myCards.size() == 0){
+                    em.type = ChatMessage::END;
+                }
 
                 // Enviar al servidor usando socket
-                ChatMessage em(nick, msg);
                 em.type = ChatMessage::MESSAGE;
                 socket.send(em, socket);
             }
@@ -197,7 +202,7 @@ void ChatClient::net_thread()
 card ChatClient::generateCard()
 {
     // 0-11 value of the card, 0-3 value of the color
-    card aux = {rand()%11,rand()%3};
+    card aux = {rand()%12,rand()%4};
     return aux;
 }
 
@@ -242,5 +247,23 @@ bool ChatClient::checkCurrentCard(card nextCard)
     else if((topCard.color == nextCard.color) || (topCard.number == nextCard.number))
     {
         return true;
+    }
+}
+
+void ChatClient::printRules(){
+    std::cout << "REGLAS:\n";
+    std::cout << " - El objetivo es lanzar una carta que coincida en número o color con la del mazo\n";
+    std::cout << " - Utiliza los cursores para desplazarte por tu mazo y espacio para utilizar la carta seleccionada\n";
+}
+
+void ChatClient::printCards(uint8_t pointer){
+    std::cout << "MAZO: ";
+    topCard.print(); 
+    std::cout << "\n\n";
+    
+    for(card c : myCards) c.print();
+    for(int i = 0; i < myCards.size(); i++) {
+        if(i != pointer) std::cout << "     ";
+        else std::cout << "*     ";
     }
 }

@@ -28,9 +28,34 @@
  */
 
 struct card {
-        uint8_t number;
-        uint8_t color;
-    };
+    uint8_t number;
+    uint8_t color;
+    void print() {
+        char c;
+        if (number < 10) c = (char)number;
+        else if (number == 10) c = '+';
+        else c = '-';
+
+        switch (color)
+        {
+        case 0:
+            std::cout << "\033[34;40m" + c;
+            break;
+        case 1:
+            std::cout << "\033[33;40m" + c;
+            break;
+        case 2:
+            std::cout << "\033[31;40m" + c;
+            break;
+        case 3:
+            std::cout << "\033[32;40m" + c;
+            break;
+        default:
+            break;
+        }
+        std::cout << "\033[0m    ";
+    }
+};
 
 class ChatMessage : public Serializable
 {
@@ -197,7 +222,14 @@ public:
      */
     void setTurn(bool current);
 
+    /**
+     *  Imprime las reglas del juego
+     */
+    void printRules();
 
-
+    /**
+     *  Imprime las reglas del juego
+     */
+    void printCards(uint8_t pointer);
 };
 
