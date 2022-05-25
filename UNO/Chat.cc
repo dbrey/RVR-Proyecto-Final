@@ -41,7 +41,7 @@ int ChatMessage::from_bin(char * bobj)
 void ChatServer::do_messages()
 {
     // Inicializamos la partida con el turno del primer jugador
-    turn = 0;
+    turn = -1;
 
     while (true)
     {
@@ -79,6 +79,11 @@ void ChatServer::do_messages()
                 turn = 0;
                 clients[turn].get()->setTurn(true);
             }
+
+            if(clients.size() == 1)
+            {
+                turn = -1;
+            }
         }
 
         // - MESSAGE: Reenviar el mensaje a todos los clientes (menos el emisor)
@@ -104,8 +109,25 @@ void ChatServer::do_messages()
 
         else if(message.type == message.END)
         {
+            std::cout << "Ha ganado el jugador: " << message.nick << "\n";
+            turn = -1; // Para indicar que la partida ha empezado
 
+        }
+        else if(message.type == message.BEGIN)
+        {
+            // Si no hay una partida empezada y hay al menos 2 jugadores
+            if(clients.size() > 1 && turn == -1)
+            {
+                turn = 0;
+                clients[turn].get()->setTurn(true);
 
+                std::cout << "El juego ha empezado ! " << "\n";
+                for(auto it = clients.begin(); it != clients.end(); ++it){
+                    if(!(**it == *messageSocket)) socket.send(message, **it);                
+            }
+
+            // Meter una carta comun en topCard
+            }
         }
     }
 }
@@ -123,10 +145,10 @@ void ChatClient::login()
     socket.send(em, socket);
     
     ///////////////////////////////////////////////////////////////// Código provisional para ver que funciona:
-    for(int i = 0; i < 7; i++)
-    {
-        myCards.push_back(generateCard());
-    }
+    // for(int i = 0; i < 7; i++)
+    // {
+    //     myCards.push_back(generateCard());
+    // }
     system("clear"); // Comando para borrar la pantalla
     std::cout << "Acabas de unirte a la partida " << nick << "\n";
     printRules();
@@ -149,6 +171,7 @@ void ChatClient::input_thread()
     bool chat = true;
     while (chat)
     {
+
         // Leer input (flechas o enter) ////////////////////////////////////////////////////////////////////////
 
         // Leer stdin con std::getline
@@ -157,6 +180,23 @@ void ChatClient::input_thread()
 
         if(msg == "exit"){
             chat = false;
+        }
+        else if(!playing && msg == "start")
+        {
+            // Comunicamos que la partida ha empezado
+            ChatMessage em(nick, msg);
+            em.type = ChatMessage::BEGIN;
+            
+            // Generamos un topcard random
+            card first = generateCard();
+            em.color = first.color;
+            em.number = first.number;
+
+            socket.send(em, socket);
+            
+            /////////////////////// Esto posiblemente haya que borrarlo dependiendo de si se llama 2 veces, aqui y cuando recibe su propio mensaje
+            // playing = true;
+            // startGame();
         }
         else{
             // Si es el turno del jugador, enviamos mensaje
@@ -195,10 +235,22 @@ void ChatClient::net_thread()
             myCards.push_back(generateCard());
         }
 
-        // Si mensaje == END -> playing = false
-        if(em.type == ChatMessage::END)
+        
+        if(em.type == ChatMessage::MESSAGE)
+        {
+            topCard.color = em.color;
+            topCard.number = em.number;
+        }        
+        else if(em.type == ChatMessage::END) // Si termina el juego, el jugador no puede mandar mas cartas aunque lo intente
         {
             playing = false;
+        }
+        else if(em.type == ChatMessage::BEGIN) // Si el juego empieza, se le da una baraja inicial y se pone la primera carta en el tablero
+        {
+            playing = true;
+            startGame();
+            topCard.color = em.color;
+            topCard.number = em.number;
         }
 
         //Mostrar en pantalla el mensaje de la forma "nick: mensaje"
@@ -275,4 +327,19 @@ void ChatClient::printCards(uint8_t pointer){
         else std::cout << "*  ";
     }
     std::cout << "\n";
+}
+
+void ChatClient::startGame()
+{
+    // Si el jugador tenia cartas de antes, se las quitamos antes de empezar el juego
+    if(myCards.size() > 0)
+    {
+        myCards.clear();
+    }
+
+    // Repartimos inicialmente 7 cartas al jugador
+    for(int i = 0; i < 7; i++)
+    {
+        myCards.push_back(generateCard());
+    }
 }

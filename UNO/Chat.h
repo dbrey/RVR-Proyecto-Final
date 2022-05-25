@@ -235,5 +235,10 @@ public:
      *  Establece si es o no el turno del jugador
      */
     void setTurn(bool current);
+
+    /**
+     *  Al empezar el juego o unirse a una partida ya iniciada
+     */
+    void startGame();
 };
 
