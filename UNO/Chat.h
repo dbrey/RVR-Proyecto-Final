@@ -32,29 +32,36 @@ struct card {
     uint8_t color;
     void print() {
         char c;
-        if (number < 10) c = number + '0'; // Si no pones el 0 te coge el caracter ASCII nº number
-        else if (number == 10) c = '+';
-        else c = '-';
 
-        switch (color)
-        {
-        case 0:
-            printf("\033[36;40m");
-            break;
-        case 1:
-            printf("\033[33;40m");
-            break;
-        case 2:
-            printf("\033[31;40m");
-            break;
-        case 3:
-            printf("\033[32;40m");
-            break;
-        default:
-            break;
+        if (number == 11) { // Separamos el cambio de color (no interesa su color, solo su number)
+            c = '-';
+            std::cout << "\033[0;35m";
         }
-        printf(&c);
-        printf("\033[0m  ");
+        else {
+            if (number < 10) c = number + '0'; // Suma el ASCII number al ASCII '0'
+            else if (number == 10) c = '+';
+
+            switch (color)
+            {
+            case 0:
+                std::cout << "\033[0;36m";
+                break;
+            case 1:
+                std::cout << "\033[0;33m";
+                break;
+            case 2:
+                std::cout << "\033[0;31m";
+                break;
+            case 3:
+                std::cout << "\033[0;32m";
+                break;
+            default:
+                break;
+            }
+        }
+
+        std::cout << c;
+        std::cout << "\033[0m  ";
     }
 };
 
@@ -165,7 +172,7 @@ private:
     /**
      * Para seleccionar cartas
      */
-    uint8_t cardPointer;
+    uint8_t cardPointer = 0;
 
 
     /**
@@ -176,7 +183,7 @@ private:
     /**
      *  Imprime las reglas del juego
      */
-    void printCards(uint8_t pointer);
+    void printGame();
 
 public:
     /**
@@ -222,9 +229,9 @@ public:
     card generateCard();
 
     /**
-     *  Genera una carta de color y valor random
+     *  Lanza la carta (si es válida)
      */
-    void throwCard();
+    bool throwCard();
 
     /**
      *  Comprueba si la carta a lanzar es compatible

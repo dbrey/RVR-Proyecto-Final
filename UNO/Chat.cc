@@ -145,14 +145,14 @@ void ChatClient::login()
     socket.send(em, socket);
     
     ///////////////////////////////////////////////////////////////// Código provisional para ver que funciona:
-    // for(int i = 0; i < 7; i++)
-    // {
-    //     myCards.push_back(generateCard());
-    // }
-    system("clear"); // Comando para borrar la pantalla
+    topCard = generateCard();
+    for(int i = 0; i < 7; i++)
+    {
+        myCards.push_back(generateCard());
+    }
     std::cout << "Acabas de unirte a la partida " << nick << "\n";
     printRules();
-    printCards(0);
+    printGame();
 }
 
 void ChatClient::logout()
@@ -173,10 +173,28 @@ void ChatClient::input_thread()
     {
 
         // Leer input (flechas o enter) ////////////////////////////////////////////////////////////////////////
+        std::string msg = "";
+        bool cardSelected = false;
+        while(!cardSelected) {
+            std::getline(std::cin, msg);
+            if(msg == "a"){
+                if(cardPointer < myCards.size() - 1) cardPointer++;
+            }
+            else if(msg == "d"){
+                if(cardPointer > 0) cardPointer--;
+            }
+            else if(msg == "exit" || msg == "start"){
+                cardSelected = true;
+            }
+            else if(msg == "s" || msg == "uno"){
+                if(throwCard()) cardSelected == true;
+            }
+            printGame();
+        }
 
         // Leer stdin con std::getline
-        std::string msg;
-        std::getline(std::cin, msg);
+        //std::string msg;
+        //std::getline(std::cin, msg);
 
         if(msg == "exit"){
             chat = false;
@@ -265,12 +283,14 @@ card ChatClient::generateCard()
     return aux;
 }
 
-void ChatClient::throwCard()
+bool ChatClient::throwCard()
 {
     if(checkCurrentCard(myCards[cardPointer]))
     {
         topCard = myCards[cardPointer];
+        return true;
     }
+    return false;
 }
 
 bool ChatClient::checkCurrentCard(card nextCard)
@@ -315,7 +335,9 @@ void ChatClient::printRules(){
     std::cout << " - Utiliza los cursores para desplazarte por tu mazo y espacio para utilizar la carta seleccionada\n";
 }
 
-void ChatClient::printCards(uint8_t pointer){
+void ChatClient::printGame(){
+    system("clear"); // Comando para borrar la pantalla
+
     std::cout << "MAZO: ";
     topCard.print(); 
     std::cout << "\n\n";
@@ -323,7 +345,7 @@ void ChatClient::printCards(uint8_t pointer){
     for(card c : myCards) c.print();
     std::cout << "\n";
     for(int i = 0; i < myCards.size(); i++) {
-        if(i != pointer) std::cout << "   ";
+        if(i != cardPointer) std::cout << "   ";
         else std::cout << "*  ";
     }
     std::cout << "\n";
