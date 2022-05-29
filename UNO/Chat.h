@@ -173,11 +173,32 @@ private:
      */
     uint8_t cardPointer = 0;
 
+    /**
+     *  Genera una carta de color y valor random
+     */
+    card generateCard();
+
+    /**
+     *  Lanza la carta (si es válida)
+     */
+    bool throwCard();
+
+    /**
+     *  Comprueba si la carta a lanzar es compatible
+     */
+    bool checkCurrentCard(card* nextCard);
+
+    /**
+     *  Al empezar el juego o unirse a una partida ya iniciada
+     */
+    void startGame();
 
     /**
      *  Imprime las reglas del juego
      */
     void printRules();
+
+    void printEndGame(std::string winner);
 
     /**
      *  Imprime las reglas del juego
@@ -221,25 +242,5 @@ public:
      *  en STDOUT
      */
     void net_thread();
-
-    /**
-     *  Genera una carta de color y valor random
-     */
-    card generateCard();
-
-    /**
-     *  Lanza la carta (si es válida)
-     */
-    bool throwCard();
-
-    /**
-     *  Comprueba si la carta a lanzar es compatible
-     */
-    bool checkCurrentCard(card* nextCard);
-
-    /**
-     *  Al empezar el juego o unirse a una partida ya iniciada
-     */
-    void startGame();
 };
 

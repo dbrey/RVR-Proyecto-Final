@@ -182,7 +182,6 @@ void ChatClient::login()
     {
         myCards.push_back(generateCard());
     }*/
-    std::cout << "Acabas de unirte a la partida " << nick << "\n";
     printRules();
     //printGame();
 }
@@ -275,24 +274,23 @@ void ChatClient::net_thread()
         //Recibir Mensajes de red
         socket.recv(em, mSocket);
 
-        // Si la carta es +2 llama 2 veces a CogerCarta 
-        if(topCard.number == 10) // Cuidado que esto no se llame infinito hasta enviar la siguiente carta
-        {
-            myCards.push_back(generateCard());
-            myCards.push_back(generateCard());
-        }
-
-
         if(em.type == ChatMessage::MESSAGE)
         {
             topCard.color = em.color;
             topCard.number = em.number;
             yourTurn = em.newTurn;
+            if(yourTurn && topCard.number == 10) // Si le toca roba dos cartas
+            {
+                myCards.push_back(generateCard());
+                myCards.push_back(generateCard());
+            }
+
             printGame();
         }        
         else if(em.type == ChatMessage::END) // Si termina el juego, el jugador no puede mandar mas cartas aunque lo intente
         {
             playing = false;
+            printEndGame(em.nick);
         }
         else if(em.type == ChatMessage::BEGIN) // Si el juego empieza, se le da una baraja inicial y se pone la primera carta en el tablero
         {
@@ -365,28 +363,6 @@ bool ChatClient::checkCurrentCard(card* nextCard)
     return false;
 }
 
-void ChatClient::printRules(){
-    std::cout << "REGLAS:\n";
-    std::cout << " - El objetivo es lanzar una carta que coincida en número o color con la del mazo\n";
-    std::cout << " - Utiliza los cursores para desplazarte por tu mazo y espacio para utilizar la carta seleccionada\n";
-}
-
-void ChatClient::printGame(){
-    system("clear"); // Comando para borrar la pantalla
-
-    std::cout << "MAZO: ";
-    topCard.print(); 
-    std::cout << "\n\n";
-
-    for(card c : myCards) c.print();
-    std::cout << "\n";
-    for(int i = 0; i < myCards.size(); i++) {
-        if(i != cardPointer) std::cout << "   ";
-        else std::cout << "*  ";
-    }
-    std::cout << "\n";
-}
-
 void ChatClient::startGame()
 {
     // Si el jugador tenia cartas de antes, se las quitamos antes de empezar el juego
@@ -400,4 +376,40 @@ void ChatClient::startGame()
     {
         myCards.push_back(generateCard());
     }
+}
+
+void ChatClient::printRules(){
+    system("clear"); 
+    std::cout << "Bienvenido al UNO \e[1m" << nick << "\e[0m\n\n";
+
+    std::cout << "REGLAS:\n";
+    std::cout << " - El objetivo es lanzar una carta que coincida en número o color con la del mazo\n";
+    std::cout << " - \e[1ma\e[0m y \e[1md\e[0m para desplazarte por tus cartas\n";
+    std::cout << " - \e[1ms\e[0m para utilizar la carta seleccionada\n";
+    std::cout << " - \e[1muno\e[0m cuando te quedes con una única carta\n\n";
+
+    std::cout << "\e[1mstart\e[0m para comenzar la partida\n\n";
+}
+
+void ChatClient::printEndGame(std::string winner){
+    system("clear");
+    std::cout << "Partida finalizada. Ganador: " << winner << "\n";
+    std::cout << "start para volver a empezar";
+}
+
+void ChatClient::printGame(){
+    system("clear"); // Comando para borrar la pantalla
+
+    std::cout << "MAZO: ";
+    topCard.print(); 
+    if(yourTurn) std::cout << "____________________Tu turno\n\n";
+    else std::cout << "____________________No es tu turno\n\n";
+
+    for(card c : myCards) c.print();
+    std::cout << "\n";
+    for(int i = 0; i < myCards.size(); i++) {
+        if(i != cardPointer) std::cout << "   ";
+        else std::cout << "*  ";
+    }
+    std::cout << "\n";
 }
