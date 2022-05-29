@@ -92,6 +92,7 @@ public:
     std::string nick;
     uint8_t number = 0;
     uint8_t color = 0;
+    bool turn = false;
     std::string message;
 };
 
@@ -236,11 +237,6 @@ public:
      *  Comprueba si la carta a lanzar es compatible
      */
     bool checkCurrentCard(card nextCard);
-
-    /**
-     *  Establece si es o no el turno del jugador
-     */
-    void setTurn(bool current);
 
     /**
      *  Al empezar el juego o unirse a una partida ya iniciada

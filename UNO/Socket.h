@@ -135,7 +135,7 @@ protected:
     /**
      *  Turno del jugador
      */
-    bool turn;
+    bool turn = false;
 };
 
 #endif /* SOCKET_H_ */

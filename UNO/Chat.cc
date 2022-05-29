@@ -89,7 +89,7 @@ void ChatServer::do_messages()
             if(turn >= clients.size())
             {
                 turn = 0;
-                clients[turn].get()->setTurn(true);
+                clients[turn]->setTurn(true);
             }
 
             if(clients.size() == 1)
@@ -103,17 +103,17 @@ void ChatServer::do_messages()
             
             // Comunicamos al jugador actual que su turno se ha terminado y que le toca al siguiente
             // Tener el turno desactivado simplemente impide que pueda enviar un tipo MESSAGE pero puede salir de la partida
-            clients[turn].get()->setTurn(false);
+            clients[turn]->setTurn(false);
             turn++;
             if(turn >= clients.size())
             {
                 turn = 0;
             }
-            clients[turn].get()->setTurn(true);
+            clients[turn]->setTurn(true);
             //------------------------------------------------------------------
 
 
-            std::cout << "MESSAGE " << *messageSocket << "\n";
+           
             for(auto it = clients.begin(); it != clients.end(); ++it){
                 if(!(**it == *messageSocket)) socket.send(message, **it);                
             }
@@ -131,8 +131,13 @@ void ChatServer::do_messages()
             if(clients.size() > 1 && turn == -1)
             {
                 turn = 0;
-                clients[turn].get()->setTurn(true);
+                /*clients[turn]->setTurn(true);
+                clients[0].get()->setTurn(true);*/
 
+                //auto it = clients.begin() + turn;
+                
+
+                
                 std::cout << "El juego ha empezado ! " << "\n";
                 for(auto it = clients.begin(); it != clients.end(); ++it){
                     socket.send(message, **it);                
@@ -198,7 +203,7 @@ void ChatClient::input_thread()
             else if(msg == "exit" || msg == "start"){
                 cardSelected = true;
             }
-            else if(msg == "s" || msg == "uno"){
+            else if(socket.getTurn() && (msg == "s" || msg == "uno")){
                 if(throwCard()) cardSelected == true;
             }
             printGame();
@@ -223,22 +228,26 @@ void ChatClient::input_thread()
             em.number = topCard.number;
 
             socket.send(em, socket);
-            /////////////////////// Esto posiblemente haya que borrarlo dependiendo de si se llama 2 veces, aqui y cuando recibe su propio mensaje
         }
         else{
+            
             
             // Si es el turno del jugador, enviamos mensaje
             if(socket.getTurn())
             {
-
+               
                 ChatMessage em(nick, msg);
                 ///// Si la ultima carta se lanza, mandar un mensaje tipo END
                 if(myCards.size() == 0){
                     em.type = ChatMessage::END;
                 }
-
-                // Enviar al servidor usando socket
-                em.type = ChatMessage::MESSAGE;
+                else
+                {
+                    em.type = ChatMessage::MESSAGE;
+                }
+                
+                em.color = topCard.color;
+                em.number = topCard.number;
                 socket.send(em, socket);
             }
             
@@ -297,6 +306,8 @@ bool ChatClient::throwCard()
     if(checkCurrentCard(myCards[cardPointer]))
     {
         topCard = myCards[cardPointer];
+        std::vector<card>::iterator it = myCards.begin() + cardPointer;
+        myCards.erase(it);
         return true;
     }
     return false;
@@ -336,6 +347,8 @@ bool ChatClient::checkCurrentCard(card nextCard)
     {
         return true;
     }
+    
+    return false;
 }
 
 void ChatClient::printRules(){
