@@ -35,7 +35,7 @@ struct card {
 
         if (number == 11) { // Separamos el cambio de color (no interesa su color, solo su number)
             c = '-';
-            std::cout << "\033[0;35m";
+            std::cout << "\033[0;95m";
         }
         else {
             if (number < 10) c = number + '0'; // Suma el ASCII number al ASCII '0'
@@ -44,16 +44,16 @@ struct card {
             switch (color)
             {
             case 0:
-                std::cout << "\033[0;36m";
+                std::cout << "\033[0;94m";
                 break;
             case 1:
-                std::cout << "\033[0;33m";
+                std::cout << "\033[0;93m";
                 break;
             case 2:
-                std::cout << "\033[0;31m";
+                std::cout << "\033[0;91m";
                 break;
             case 3:
-                std::cout << "\033[0;32m";
+                std::cout << "\033[0;92m";
                 break;
             default:
                 break;

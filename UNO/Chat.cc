@@ -189,10 +189,10 @@ void ChatClient::input_thread()
         bool cardSelected = false;
         while(!cardSelected) {
             std::getline(std::cin, msg);
-            if(msg == "a"){
+            if(msg == "d"){
                 if(cardPointer < myCards.size() - 1) cardPointer++;
             }
-            else if(msg == "d"){
+            else if(msg == "a"){
                 if(cardPointer > 0) cardPointer--;
             }
             else if(msg == "exit" || msg == "start"){
@@ -282,9 +282,6 @@ void ChatClient::net_thread()
             topCard.number = em.number;
             printGame();
         }
-
-        //Mostrar en pantalla el mensaje de la forma "nick: mensaje"
-        std::cout << em.nick << ": " << em.message << "\n";
     }
 }
 
