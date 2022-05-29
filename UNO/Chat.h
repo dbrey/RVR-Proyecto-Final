@@ -92,7 +92,7 @@ public:
     std::string nick;
     uint8_t number = 0;
     uint8_t color = 0;
-    bool turn = false;
+    bool newTurn = false;
     std::string message;
 };
 
@@ -162,7 +162,7 @@ private:
     /**
      * Para saber si te toca jugar o no
      */
-    bool yourTurn;
+    bool yourTurn = false;
 
     /**
      * Carta del centro

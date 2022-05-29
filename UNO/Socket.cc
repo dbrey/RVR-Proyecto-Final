@@ -75,13 +75,3 @@ std::ostream& operator<<(std::ostream& os, const Socket& s)
 
     return os;
 };
-
-void Socket::setTurn(bool current)
-{
-    turn = current;
-}
-
-bool Socket::getTurn()
-{
-    return turn;
-}

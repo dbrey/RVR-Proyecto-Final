@@ -16,11 +16,14 @@ void ChatMessage::to_bin()
     memcpy(tmp, nick.c_str(), 8 * sizeof(char));
     tmp += 8 * sizeof(char);
 
-    memcpy(tmp, &type, sizeof(uint8_t)); // Nº Carta
+    memcpy(tmp, &number, sizeof(uint8_t)); // Nº Carta
     tmp += sizeof(uint8_t);
 
-    memcpy(tmp, &type, sizeof(uint8_t)); // Color
+    memcpy(tmp, &color, sizeof(uint8_t)); // Color
     tmp += sizeof(uint8_t);
+
+    memcpy(tmp, &newTurn, sizeof(bool)); // Color
+    tmp += sizeof(bool);
 
     memcpy(tmp, message.c_str(), 80 * sizeof(char));
 }
@@ -43,6 +46,10 @@ int ChatMessage::from_bin(char * bobj)
 
     memcpy(&color, tmp, sizeof(uint8_t)); // Nº Color
     tmp += sizeof(uint8_t);
+
+    memcpy(&newTurn, tmp, sizeof(bool)); // Turno del jugador
+        tmp += sizeof(bool);
+    
 
     message = tmp;
 
@@ -87,15 +94,20 @@ void ChatServer::do_messages()
             // En caso de que el ultimo jugador se vaya en su turno, nos aseguramos de que se pase el turno al siguiente jugador
             // (Ejemplo turno 4, pero jugador 4 se va. Si pasa a haber 3 jugadores solo, entonces pasamos automaticamente el turno)
             if(turn >= clients.size())
-            {
                 turn = 0;
-                clients[turn]->setTurn(true);
-            }
 
             if(clients.size() == 1)
             {
                 turn = -1;
             }
+            else
+            {
+                message.newTurn = true;
+                auto it = clients.begin() + turn;
+                socket.send(message, **it);
+            }
+            
+
         }
 
         // - MESSAGE: Reenviar el mensaje a todos los clientes (menos el emisor)
@@ -103,20 +115,26 @@ void ChatServer::do_messages()
             
             // Comunicamos al jugador actual que su turno se ha terminado y que le toca al siguiente
             // Tener el turno desactivado simplemente impide que pueda enviar un tipo MESSAGE pero puede salir de la partida
-            clients[turn]->setTurn(false);
             turn++;
             if(turn >= clients.size())
-            {
                 turn = 0;
-            }
-            clients[turn]->setTurn(true);
-            //------------------------------------------------------------------
-
-
+            
+            //------------------------------------------------------------------   
            
-            for(auto it = clients.begin(); it != clients.end(); ++it){
-                if(!(**it == *messageSocket)) socket.send(message, **it);                
+            for(auto it = clients.begin(); it != clients.end(); ++it)
+            {
+                if(*it == clients[turn])
+                {
+                    message.newTurn = true;
+                    socket.send(message, **it); 
+                    message.newTurn = false;
+                }
+                else 
+                {
+                    socket.send(message, **it);                
+                }
             }
+            
         }
 
         else if(message.type == message.END)
@@ -130,18 +148,15 @@ void ChatServer::do_messages()
             // Si no hay una partida empezada y hay al menos 2 jugadores
             if(clients.size() > 1 && turn == -1)
             {
-                turn = 0;
-                /*clients[turn]->setTurn(true);
-                clients[0].get()->setTurn(true);*/
-
-                //auto it = clients.begin() + turn;
+                message.newTurn = true;
+                auto it = clients.begin();
+                socket.send(message, **it);
                 
-
-                
+                message.newTurn = false;    
                 std::cout << "El juego ha empezado ! " << "\n";
-                for(auto it = clients.begin(); it != clients.end(); ++it){
+                for(it = it+1; it != clients.end(); ++it){
                     socket.send(message, **it);                
-            }
+                }
 
             // Meter una carta comun en topCard
             }
@@ -203,7 +218,7 @@ void ChatClient::input_thread()
             else if(msg == "exit" || msg == "start"){
                 cardSelected = true;
             }
-            else if(socket.getTurn() && (msg == "s" || msg == "uno")){
+            else if(yourTurn && (msg == "s" || msg == "uno")){
                 if(throwCard()) cardSelected == true;
             }
             printGame();
@@ -233,7 +248,7 @@ void ChatClient::input_thread()
             
             
             // Si es el turno del jugador, enviamos mensaje
-            if(socket.getTurn())
+            if(yourTurn)
             {
                
                 ChatMessage em(nick, msg);
@@ -277,6 +292,7 @@ void ChatClient::net_thread()
         {
             topCard.color = em.color;
             topCard.number = em.number;
+            yourTurn = em.newTurn;
             printGame();
         }        
         else if(em.type == ChatMessage::END) // Si termina el juego, el jugador no puede mandar mas cartas aunque lo intente
@@ -289,6 +305,7 @@ void ChatClient::net_thread()
             startGame();
             topCard.color = em.color;
             topCard.number = em.number;
+            yourTurn = em.newTurn;
             printGame();
         }
     }
