@@ -30,6 +30,12 @@
 struct card {
     uint8_t number;
     uint8_t color;
+
+    bool operator!=(const card& other)
+    {
+        return (other.number != number && other.color != color);
+    }
+
     void print() {
         char c;
 
@@ -188,6 +194,10 @@ private:
      */
     bool checkCurrentCard(card* nextCard);
 
+    void getCard(int n);
+
+    bool tryGettingCard();
+
     /**
      *  Al empezar el juego o unirse a una partida ya iniciada
      */
@@ -200,10 +210,12 @@ private:
 
     void printEndGame(std::string winner);
 
+    void printExit();
+
     /**
      *  Imprime las reglas del juego
      */
-    void printGame();
+    void printGame(std::string error);
 
 public:
     /**

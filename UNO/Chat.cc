@@ -176,14 +176,7 @@ void ChatClient::login()
 
     socket.send(em, socket);
     
-    ///////////////////////////////////////////////////////////////// Código provisional para ver que funciona:
-    /*topCard = generateCard();
-    for(int i = 0; i < 7; i++)
-    {
-        myCards.push_back(generateCard());
-    }*/
     printRules();
-    //printGame();
 }
 
 void ChatClient::logout()
@@ -195,6 +188,7 @@ void ChatClient::logout()
     em.type = ChatMessage::LOGOUT;
 
     socket.send(em, socket);
+    printExit();
 }
 
 void ChatClient::input_thread()
@@ -205,11 +199,14 @@ void ChatClient::input_thread()
 
         // Leer input (flechas o enter) ////////////////////////////////////////////////////////////////////////
         std::string msg = "";
+        std::string error;
+
         bool choosing = true;
         while(choosing) {
+            error = "";
             std::getline(std::cin, msg);
             if(msg == "d"){
-                if(cardPointer < myCards.size() - 1) cardPointer++;
+                if(cardPointer < myCards.size()) cardPointer++;
             }
             else if(msg == "a"){
                 if(cardPointer > 0) cardPointer--;
@@ -218,9 +215,17 @@ void ChatClient::input_thread()
                 choosing = false;
             }
             else if(yourTurn && (msg == "s" || msg == "uno")){
-                if(throwCard()) choosing = false;
+                if(cardPointer == myCards.size()){
+                    if(!tryGettingCard()) error = "Puede echar, no puedes robar";
+                }
+                else if(throwCard()) choosing = false;
+                else error = "Imposible usar esta carta";
             }
-            printGame();
+            else {
+                if(yourTurn) error = "Comando no reconocido";
+                else error = "No es tu turno";
+            }
+            printGame(error);
         }
 
 
@@ -253,6 +258,9 @@ void ChatClient::input_thread()
                 else
                 {
                     em.type = ChatMessage::MESSAGE;
+                    if(myCards.size() == 1 && em.message != "uno"){
+                        getCard(2);
+                    }
                 }
                 
                 em.color = topCard.color;
@@ -281,11 +289,10 @@ void ChatClient::net_thread()
             yourTurn = em.newTurn;
             if(yourTurn && topCard.number == 10) // Si le toca roba dos cartas
             {
-                myCards.push_back(generateCard());
-                myCards.push_back(generateCard());
+                getCard(2);
             }
 
-            printGame();
+            printGame("");
         }        
         else if(em.type == ChatMessage::END) // Si termina el juego, el jugador no puede mandar mas cartas aunque lo intente
         {
@@ -299,7 +306,7 @@ void ChatClient::net_thread()
             topCard.color = em.color;
             topCard.number = em.number;
             yourTurn = em.newTurn;
-            printGame();
+            printGame("");
         }
     }
 }
@@ -335,6 +342,11 @@ bool ChatClient::checkCurrentCard(card* nextCard)
 
         std::string msg;
         std::getline(std::cin, msg);
+        while(msg != "azul" && msg != "amarillo" && msg != "rojo" && msg != "verde"){
+            printGame("Color no reconocido");
+            std::cout << "Selecciona un color (azul, amarillo, rojo, verde) :" << "\n";
+            std::getline(std::cin, msg);
+        }
 
         if(msg == "azul")
         {
@@ -363,6 +375,22 @@ bool ChatClient::checkCurrentCard(card* nextCard)
     return false;
 }
 
+void ChatClient::getCard(int n){
+    for(int i = 0; i < n; i++){
+        myCards.push_back(generateCard());
+    }
+}
+
+bool ChatClient::tryGettingCard(){
+    int i = 0;
+    while(i < myCards.size() && myCards[i] != topCard && myCards[i].number != 11) ++i;
+    if(i == myCards.size()){
+        getCard(1);
+        return true;
+    }
+    return false;
+}
+
 void ChatClient::startGame()
 {
     // Si el jugador tenia cartas de antes, se las quitamos antes de empezar el juego
@@ -371,11 +399,7 @@ void ChatClient::startGame()
         myCards.clear();
     }
 
-    // Repartimos inicialmente 7 cartas al jugador
-    for(int i = 0; i < 7; i++)
-    {
-        myCards.push_back(generateCard());
-    }
+    getCard(7);
 }
 
 void ChatClient::printRules(){
@@ -397,19 +421,25 @@ void ChatClient::printEndGame(std::string winner){
     std::cout << "start para volver a empezar";
 }
 
-void ChatClient::printGame(){
+void ChatClient::printExit(){
+    system("clear");
+    std::cout << "Saliste de la partida\n\n";
+}
+
+void ChatClient::printGame(std::string error){
     system("clear"); // Comando para borrar la pantalla
 
     std::cout << "MAZO: ";
     topCard.print(); 
-    if(yourTurn) std::cout << "____________________Tu turno\n\n";
-    else std::cout << "____________________No es tu turno\n\n";
+    if(yourTurn) std::cout << "..............................Tu turno\n\n";
+    else std::cout << "..............................No es tu turno\n\n";
 
     for(card c : myCards) c.print();
-    std::cout << "\n";
-    for(int i = 0; i < myCards.size(); i++) {
+    std::cout << "R  \n";
+    for(int i = 0; i < myCards.size() + 1; i++) {
         if(i != cardPointer) std::cout << "   ";
         else std::cout << "*  ";
     }
     std::cout << "\n";
+    if(error != "") std::cout << "\033[0;31m" << error << "\033[0m\n";
 }
