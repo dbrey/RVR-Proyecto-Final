@@ -33,32 +33,31 @@ struct card {
     void print() {
         char c;
 
-        if (number == 11) { // Separamos el cambio de color (no interesa su color, solo su number)
-            c = '-';
-            std::cout << "\033[0;95m";
-        }
-        else {
-            if (number < 10) c = number + '0'; // Suma el ASCII number al ASCII '0'
-            else if (number == 10) c = '+';
+        if (number < 10) c = number + '0'; // Suma el ASCII number al ASCII '0'
+        else if (number == 10) c = '+';
+        else if (number == 11) c = '-';
 
-            switch (color)
-            {
-            case 0:
-                std::cout << "\033[0;94m";
-                break;
-            case 1:
-                std::cout << "\033[0;93m";
-                break;
-            case 2:
-                std::cout << "\033[0;91m";
-                break;
-            case 3:
-                std::cout << "\033[0;92m";
-                break;
-            default:
-                break;
-            }
+        switch (color)
+        {
+        case 0:
+            std::cout << "\033[0;94m";
+            break;
+        case 1:
+            std::cout << "\033[0;93m";
+            break;
+        case 2:
+            std::cout << "\033[0;91m";
+            break;
+        case 3:
+            std::cout << "\033[0;92m";
+            break;
+        case 4:
+            std::cout << "\033[0;95m";
+            break;
+        default:
+            break;
         }
+
 
         std::cout << c;
         std::cout << "\033[0m  ";
@@ -236,7 +235,7 @@ public:
     /**
      *  Comprueba si la carta a lanzar es compatible
      */
-    bool checkCurrentCard(card nextCard);
+    bool checkCurrentCard(card* nextCard);
 
     /**
      *  Al empezar el juego o unirse a una partida ya iniciada
