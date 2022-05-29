@@ -90,10 +90,9 @@ public:
     uint8_t type;
 
     std::string nick;
-    uint8_t number;
-    uint8_t color;
-    bool turn;
-    std::string message; // Esto hay que quitarlo
+    uint8_t number = 0;
+    uint8_t color = 0;
+    std::string message;
 };
 
 // -----------------------------------------------------------------------------
@@ -126,7 +125,7 @@ private:
     /**
      * Le toca jugar a clients[turn]
      */
-    uint8_t turn;
+    int8_t turn = -1;
 
     /**
      * Socket del servidor

@@ -15,6 +15,13 @@ void ChatMessage::to_bin()
     tmp += sizeof(uint8_t);
     memcpy(tmp, nick.c_str(), 8 * sizeof(char));
     tmp += 8 * sizeof(char);
+
+    memcpy(tmp, &type, sizeof(uint8_t)); // Nº Carta
+    tmp += sizeof(uint8_t);
+
+    memcpy(tmp, &type, sizeof(uint8_t)); // Color
+    tmp += sizeof(uint8_t);
+
     memcpy(tmp, message.c_str(), 80 * sizeof(char));
 }
 
@@ -30,6 +37,13 @@ int ChatMessage::from_bin(char * bobj)
     tmp += sizeof(uint8_t);
     nick = tmp;
     tmp += 8 * sizeof(char);
+
+    memcpy(&number, tmp, sizeof(uint8_t)); // Nº Carta
+    tmp += sizeof(uint8_t);
+
+    memcpy(&color, tmp, sizeof(uint8_t)); // Nº Color
+    tmp += sizeof(uint8_t);
+
     message = tmp;
 
     return 0;
@@ -40,9 +54,6 @@ int ChatMessage::from_bin(char * bobj)
 
 void ChatServer::do_messages()
 {
-    // Inicializamos la partida con el turno del primer jugador
-    turn = -1;
-
     while (true)
     {
         /*
@@ -62,6 +73,7 @@ void ChatServer::do_messages()
             std::unique_ptr<Socket> uptr = std::make_unique<Socket>(*messageSocket);
             messageSocket = nullptr;
             clients.push_back(std::move(uptr));
+           
         }
 
         // - LOGOUT: Eliminar del vector clients
@@ -123,7 +135,7 @@ void ChatServer::do_messages()
 
                 std::cout << "El juego ha empezado ! " << "\n";
                 for(auto it = clients.begin(); it != clients.end(); ++it){
-                    if(!(**it == *messageSocket)) socket.send(message, **it);                
+                    socket.send(message, **it);                
             }
 
             // Meter una carta comun en topCard
@@ -145,14 +157,14 @@ void ChatClient::login()
     socket.send(em, socket);
     
     ///////////////////////////////////////////////////////////////// Código provisional para ver que funciona:
-    topCard = generateCard();
+    /*topCard = generateCard();
     for(int i = 0; i < 7; i++)
     {
         myCards.push_back(generateCard());
-    }
+    }*/
     std::cout << "Acabas de unirte a la partida " << nick << "\n";
     printRules();
-    printGame();
+    //printGame();
 }
 
 void ChatClient::logout()
@@ -206,17 +218,15 @@ void ChatClient::input_thread()
             em.type = ChatMessage::BEGIN;
             
             // Generamos un topcard random
-            card first = generateCard();
-            em.color = first.color;
-            em.number = first.number;
+            topCard = generateCard();
+            em.color = topCard.color;
+            em.number = topCard.number;
 
             socket.send(em, socket);
-            
             /////////////////////// Esto posiblemente haya que borrarlo dependiendo de si se llama 2 veces, aqui y cuando recibe su propio mensaje
-            // playing = true;
-            // startGame();
         }
         else{
+            
             // Si es el turno del jugador, enviamos mensaje
             if(socket.getTurn())
             {
@@ -253,11 +263,12 @@ void ChatClient::net_thread()
             myCards.push_back(generateCard());
         }
 
-        
+
         if(em.type == ChatMessage::MESSAGE)
         {
             topCard.color = em.color;
             topCard.number = em.number;
+            printGame();
         }        
         else if(em.type == ChatMessage::END) // Si termina el juego, el jugador no puede mandar mas cartas aunque lo intente
         {
@@ -269,6 +280,7 @@ void ChatClient::net_thread()
             startGame();
             topCard.color = em.color;
             topCard.number = em.number;
+            printGame();
         }
 
         //Mostrar en pantalla el mensaje de la forma "nick: mensaje"
