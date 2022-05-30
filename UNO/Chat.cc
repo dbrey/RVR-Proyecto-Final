@@ -434,12 +434,135 @@ void ChatClient::printGame(std::string error){
     if(yourTurn) std::cout << "..............................Tu turno\n\n";
     else std::cout << "..............................No es tu turno\n\n";
 
-    for(card c : myCards) c.print();
-    std::cout << "R  \n";
+
+    
+    //for(card c : myCards) c.print();
+
+
+
+    for(int i = 0; i< myCards.size()+1; i++)
+    {   
+        if(i == myCards.size())
+        {
+            std::cout << "\033[0m";
+        }
+        else
+        {
+            changeColor(myCards[i].color);
+        }
+       
+        std::cout << "+---+  ";
+    }
+
+    std::cout << "\n";
+
+    for(int i = 0; i< myCards.size()+1; i++)
+    {
+       if(i == myCards.size())
+        {
+            std::cout << "\033[0m";
+        }
+        else
+        {
+            changeColor(myCards[i].color);
+        }
+       std::cout << "|   |  ";
+    }
+
+    std::cout << "\n";
+
+    
+    for(int i = 0; i < myCards.size()+1; i++)
+    {
+        if(i == myCards.size())
+        {
+            std::cout << "\033[0m";
+            std::cout << "| " << "R" << " |  "; // Robar carta
+        }
+        else
+        {
+            changeColor(myCards[i].color);
+            if(myCards.at(i).number <10)
+            {
+                char c = myCards.at(i).number + '0';
+                std::cout << "| " << c << " |  "; // Numeros del 0 al 9
+            }
+            else
+            {
+                if(myCards.at(i).number ==10)
+                {
+                    std::cout << "| " << "+" << " |  "; // +2 cartas
+                }
+                else
+                {
+                    std::cout << "| " << "-" << " |  "; // Cambio de color
+                }
+            }
+        }
+    }
+
+    std::cout << "\n";
+
+    for(int i = 0; i< myCards.size()+1; i++)
+    {
+        if(i == myCards.size())
+        {
+            std::cout << "\033[0m";
+        }
+        else
+        {
+            changeColor(myCards[i].color);
+        }
+       std::cout << "|   |  ";
+    }
+
+    std::cout << "\n";
+
+    for(int i = 0; i< myCards.size()+1; i++)
+    {
+        if(i == myCards.size())
+        {
+            std::cout << "\033[0m";
+        }
+        else
+        {
+            changeColor(myCards[i].color);
+        }
+       std::cout << "+---+  ";
+    }
+
+    std::cout << "\033[0m  "; // Restablecemos el color
+
+    std::cout << "\n";
     for(int i = 0; i < myCards.size() + 1; i++) {
-        if(i != cardPointer) std::cout << "   ";
-        else std::cout << "*  ";
+        if(i != cardPointer) std::cout << "       ";
+        else std::cout << "  *  ";
     }
     std::cout << "\n";
     if(error != "") std::cout << "\033[0;31m" << error << "\033[0m\n";
+}
+
+void ChatClient::changeColor(int c)
+{
+    switch (c)
+        {
+        case 0:
+            std::cout << "\033[0;94m";
+            break;
+        case 1:
+            std::cout << "\033[0;93m";
+            break;
+        case 2:
+            std::cout << "\033[0;91m";
+            break;
+        case 3:
+            std::cout << "\033[0;92m";
+            break;
+        case 4:
+            std::cout << "\033[0;95m";
+            break;
+        default:
+            break;
+        }
+
 }

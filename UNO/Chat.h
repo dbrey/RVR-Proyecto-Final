@@ -43,6 +43,7 @@ struct card {
         else if (number == 10) c = '+';
         else if (number == 11) c = '-';
 
+
         switch (color)
         {
         case 0:
@@ -64,8 +65,14 @@ struct card {
             break;
         }
 
+        // Diiujar la carta de forma especifica
+        std::cout << "\n";
+        std::cout << "+---+ " << "\n";
+        std::cout << "|   | " << "\n";
+        std::cout << "| " << c << " | "<< "\n";
+        std::cout << "|   | " << "\n";
+        std::cout << "+---+ " << "\n";
 
-        std::cout << c;
         std::cout << "\033[0m  ";
     }
 };
@@ -211,6 +218,8 @@ private:
     void printEndGame(std::string winner);
 
     void printExit();
+
+    void changeColor(int c);
 
     /**
      *  Imprime las reglas del juego
