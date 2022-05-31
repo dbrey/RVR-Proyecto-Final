@@ -49,7 +49,7 @@ int ChatMessage::from_bin(char * bobj)
     memcpy(&color, tmp, sizeof(uint8_t)); // Nº Color
     tmp += sizeof(uint8_t);
 
-    memcpy(&newTurn, tmp, sizeof(bool)); // Turno del jugador
+    memcpy(&newTurn, tmp, sizeof(bool)); // Turno
     tmp += sizeof(bool);
     
     message = tmp; // Mensaje
@@ -89,6 +89,7 @@ void ChatServer::do_messages()
         else if(message.type == message.LOGOUT){
             std::cout << "LOGOUT " << *messageSocket << "\n";
             auto it = clients.begin();
+            
             int i = 0; // Indice del jugador que ha salido
             while(it != clients.end() && !(**it == *messageSocket)) {
                 ++it;
@@ -96,43 +97,42 @@ void ChatServer::do_messages()
             }
             if(it == clients.end()) std::cout << "Client not found\n";
             else { // Borramos al jugador manteniendo los turnos
-                if(clients.size() == 2){ // Solo había dos jugadores, al salir uno se acaba la partida
+                
+                clients.erase(it);
+                if(clients.size() == 1) // Si solo queda un jugador, le sacamos de la partida
+                {
                     turn = -1;
+                    message.color = -1;
+                    socket.send(message, **clients.begin());
                 }
-                else{
-                    clients.erase(it);
-
-                    if(turn == i){ // Si le tocaba al que se va, le toca al que ocupará su posición
-                        message.newTurn = true;
-                        auto it = clients.begin() + turn;
-                        socket.send(message, **it);
-                    }
-                    else if(turn > i) turn--; // El que tenía turno ha retrocedido una posición
+                if(turn == i){ // Si le tocaba al que se va, le toca al que ocupará su posición
+                    message.newTurn = true;
+                    it = clients.begin() + turn;
+                    socket.send(message, **it);
                 }
+                else if(turn > i) turn--; // El que tenía turno ha retrocedido una posición
+                
             }
-            
-
         }
 
-        // - MESSAGE: Reenviar el mensaje a todos los clientes (menos el emisor)
         else if(message.type == message.MESSAGE){
-            // Comunicamos al jugador actual que su turno se ha terminado y que le toca al siguiente
-            // Tener el turno desactivado simplemente impide que pueda enviar un tipo MESSAGE pero puede salir de la partida
-            turn = (turn + 1) % clients.size();
             
-            //------------------------------------------------------------------   
-           
+            // Comunicamos al siguiente jugador que le toca
+            // Tener el turno desactivado simplemente impide que pueda enviar un tipo MESSAGE pero puede 
+            // salir de la partida y moverse para seleccionar la siguiente carta
+            
+            turn = (turn + 1) % clients.size();          
             for(auto it = clients.begin(); it != clients.end(); ++it)
             {
                 if(**it == *clients[turn])
                 {
                     message.newTurn = true;
-                    socket.send(message, **it); 
+                    socket.send(message, **it); // Le comunicamos que es el turno del jugador, junto con la carta en la mesa
                     message.newTurn = false;
                 }
                 else 
                 {
-                    socket.send(message, **it);                
+                    socket.send(message, **it);          
                 }
             }
             
@@ -141,7 +141,8 @@ void ChatServer::do_messages()
         else if(message.type == message.END)
         {
             std::cout << "Ha ganado el jugador: " << message.nick << "\n";
-            turn = -1; // Para indicar que la partida ha empezado
+            turn = -1; // Para indicar que la partida ha terminado
+
             for(auto it = clients.begin(); it != clients.end(); ++it){
                     socket.send(message, **it);                
             }
@@ -151,6 +152,7 @@ void ChatServer::do_messages()
             // Si no hay una partida empezada y hay al menos 2 jugadores
             if(clients.size() > 1 && turn == -1)
             {
+                
                 turn = 0;
                 message.newTurn = true;
                 auto it = clients.begin();
@@ -200,7 +202,6 @@ void ChatClient::input_thread()
     while (chat)
     {
 
-        // Leer input (flechas o enter) ////////////////////////////////////////////////////////////////////////
         std::string msg = "";
         std::string error;
 
@@ -208,6 +209,12 @@ void ChatClient::input_thread()
         while(choosing) {
             error = "";
             std::getline(std::cin, msg);
+
+            // SUMMARY
+            // El jugador se mueve mandando mensajes 'a' y 'd'
+            // EL jugador manda la carta mandando un mensaje 's' o si solo le queda 2 cartas, "uno"
+            // Si el jugador selecciona la "carta" R (robar), roba 1 carta
+            // Todo esto solo si es el turno del jugador
 
             if(msg == "start" || msg == "exit"){
                 choosing = false;
@@ -221,7 +228,7 @@ void ChatClient::input_thread()
                 }
                 else if(yourTurn && (msg == "s" || msg == "uno")){
                     if(cardPointer == myCards.size()){
-                        if(!tryGettingCard()) error = "Puede echar, no puedes robar";
+                        if(!tryGettingCard()) error = "Puedes echar, no puedes robar";
                     }
                     else if(throwCard()) choosing = false;
                     else error = "Imposible usar esta carta";
@@ -244,6 +251,7 @@ void ChatClient::input_thread()
             
             // Generamos un topcard random
             card top = generateCard();
+            if(top.number > 9) { top.number = 9;} // Para evitar que salga cambio de color
             em.color = top.color;
             em.number = top.number;
 
@@ -258,7 +266,7 @@ void ChatClient::input_thread()
             if(yourTurn)
             {
                 ChatMessage em(nick, msg);
-                ///// Si la ultima carta se lanza, mandar un mensaje tipo END
+                // Si la ultima carta se lanza, mandar un mensaje tipo END
                 if(myCards.size() == 0){
                     em.type = ChatMessage::END;
                 }
@@ -286,7 +294,7 @@ void ChatClient::net_thread()
     Socket *mSocket = new Socket(socket);
     while(true)
     {
-        //Recibir Mensajes de red
+        // Recibir Mensajes de red
         socket.recv(em, mSocket);
 
         if(em.type == ChatMessage::MESSAGE)
@@ -300,7 +308,13 @@ void ChatClient::net_thread()
             }
 
             printGame("");
-        }        
+        }
+        if(em.type == ChatMessage::LOGOUT && em.color == -1) // Si alguien se sale y es un solo jugador, lo sacamos de la partida
+        {
+            std::cout << em.color << "\n";
+            playing == false;
+            printRules();
+        }     
         else if(em.type == ChatMessage::END) // Si termina el juego, el jugador no puede mandar mas cartas aunque lo intente
         {
             playing = false;
@@ -328,8 +342,9 @@ card ChatClient::generateCard()
 
 bool ChatClient::throwCard()
 {
-    if(checkCurrentCard(&myCards[cardPointer]))
+    if(checkCurrentCard(&myCards[cardPointer])) // Comprueba si puede lanzar la carta
     {
+        // Si puede, sustituye la carta de la mesa, y se elimina del mazo
         topCard = myCards[cardPointer];
         std::vector<card>::iterator it = myCards.begin() + cardPointer;
         myCards.erase(it);
@@ -373,7 +388,7 @@ bool ChatClient::checkCurrentCard(card* nextCard)
         }
         return true;
     }
-    // If color or number is the same, player can throw the card
+    // Si el color o el numero son iguales, puede lanzar la carta
     else if((topCard.color == nextCard->color) || (topCard.number == nextCard->number))
     {
         return true;
@@ -391,8 +406,22 @@ void ChatClient::getCard(int n){
 bool ChatClient::tryGettingCard(){
     int i = 0;
     while(i < myCards.size() && myCards[i] != topCard && myCards[i].number != 11) ++i;
+    
     if(i == myCards.size()){
-        getCard(1);
+        
+        if(myCards.size() < 13)
+        {
+            getCard(1);
+        }
+        else
+        {
+            // Para que no robe infinitas cartas, si llega al limite de cartas, le damos un cambio de color
+            card aux;
+            aux.color = 4;
+            aux.number = 11;
+            myCards.push_back(aux);
+        }
+        
         return true;
     }
     return false;
@@ -425,12 +454,12 @@ void ChatClient::printRules(){
 void ChatClient::printEndGame(std::string winner){
     system("clear");
     std::cout << "Partida finalizada. Ganador: " << winner << "\n";
-    std::cout << "start para volver a empezar";
+    std::cout << "start para volver a empezar" << "\n";
 }
 
 void ChatClient::printExit(){
     system("clear");
-    std::cout << "Saliste de la partida\n\n";
+    std::cout << "Saliste de la partida" << "\n";
 }
 
 void ChatClient::printGame(std::string error){
@@ -441,12 +470,7 @@ void ChatClient::printGame(std::string error){
     if(yourTurn) std::cout << "..............................Tu turno\n\n";
     else std::cout << "..............................No es tu turno\n\n";
 
-
-    
-    //for(card c : myCards) c.print();
-
-
-
+    // Escribimos la parte superior de las cartas por color
     for(int i = 0; i< myCards.size()+1; i++)
     {   
         if(i == myCards.size())
@@ -463,6 +487,7 @@ void ChatClient::printGame(std::string error){
 
     std::cout << "\n";
 
+    // Escribimos columnas de las por color
     for(int i = 0; i< myCards.size()+1; i++)
     {
        if(i == myCards.size())
@@ -478,7 +503,7 @@ void ChatClient::printGame(std::string error){
 
     std::cout << "\n";
 
-    
+    // Escribimos las columnas y el valor de las cartas con su color correspondiente
     for(int i = 0; i < myCards.size()+1; i++)
     {
         if(i == myCards.size())
@@ -510,6 +535,7 @@ void ChatClient::printGame(std::string error){
 
     std::cout << "\n";
 
+    // Escribimos columnas de las por color
     for(int i = 0; i< myCards.size()+1; i++)
     {
         if(i == myCards.size())
@@ -525,6 +551,7 @@ void ChatClient::printGame(std::string error){
 
     std::cout << "\n";
 
+    // Escribimos la parte inferior de las cartas por color
     for(int i = 0; i< myCards.size()+1; i++)
     {
         if(i == myCards.size())

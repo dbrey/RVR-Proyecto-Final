@@ -47,19 +47,19 @@ struct card {
         switch (color)
         {
         case 0:
-            std::cout << "\033[0;94m";
+            std::cout << "\033[0;94m"; // Azul
             break;
         case 1:
-            std::cout << "\033[0;93m";
+            std::cout << "\033[0;93m"; // Amarillo
             break;
         case 2:
-            std::cout << "\033[0;91m";
+            std::cout << "\033[0;91m"; // Rojo
             break;
         case 3:
-            std::cout << "\033[0;92m";
+            std::cout << "\033[0;92m"; // Verde
             break;
         case 4:
-            std::cout << "\033[0;95m";
+            std::cout << "\033[0;95m"; // Cambio de color
             break;
         default:
             break;
@@ -104,7 +104,7 @@ public:
     std::string nick;
     uint8_t number = 0;
     uint8_t color = 0;
-    bool newTurn = false;
+    bool newTurn = false; // Para comunicar si es el turno del jugador
     std::string message;
 };
 
