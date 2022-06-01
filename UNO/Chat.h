@@ -69,7 +69,7 @@ struct card {
         std::cout << "\n";
         std::cout << "+---+ " << "\n";
         std::cout << "|   | " << "\n";
-        std::cout << "| " << c << " | "<< "\n";
+        std::cout << "| " << c << " | " << "\n";
         std::cout << "|   | " << "\n";
         std::cout << "+---+ " << "\n";
 
@@ -80,7 +80,7 @@ struct card {
 class ChatMessage : public Serializable
 {
 public:
-    static const size_t MESSAGE_SIZE = sizeof(char) * 88 + sizeof(uint8_t);
+    static const size_t MESSAGE_SIZE = sizeof(char) * 80 + 2 * sizeof(uint8_t) + sizeof(bool);
 
     enum MessageType
     {
@@ -187,7 +187,12 @@ private:
     uint8_t cardPointer = 0;
 
     /**
-     *  Genera una carta de color y valor random
+     *  Genera una carta de color y valor random (solo números)
+     */
+    card generateNumberCard();
+
+    /**
+     *  Genera una carta de color y valor random (números y especiales)
      */
     card generateCard();
 
@@ -201,8 +206,14 @@ private:
      */
     bool checkCurrentCard(card* nextCard);
 
+    /**
+     *  El jugador roba n cartas
+     */
     void getCard(int n);
 
+    /**
+     *  Mira si el jugador puede robar una carta (y si eso la roba)
+     */
     bool tryGettingCard();
 
     /**
@@ -215,10 +226,19 @@ private:
      */
     void printRules();
 
+    /**
+     *  Imprime pantalla fin de juego
+     */
     void printEndGame(std::string winner);
 
+    /**
+     *  Imprime pantalla saliste del juego
+     */
     void printExit();
 
+    /**
+     *  Cambia color para salida de texto por consola
+     */
     void changeColor(int c);
 
     /**

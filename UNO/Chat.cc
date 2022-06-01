@@ -81,9 +81,6 @@ void ChatServer::do_messages()
             std::cout << "LOGIN " << *messageSocket << "\n";
             std::unique_ptr<Socket> uptr = std::make_unique<Socket>(*messageSocket);
             messageSocket = nullptr;
-
-            uptr->setIndex(clients.size());
-            std::cout << clients.size() << "\n";
             clients.push_back(std::move(uptr));
            
         }
@@ -92,43 +89,31 @@ void ChatServer::do_messages()
         else if(message.type == message.LOGOUT){
             std::cout << "LOGOUT " << *messageSocket << "\n";
             
-            int toDelete = (*messageSocket).getIndex();
-                    
             auto it = clients.begin();
-            /*for(it; it != clients.end(); ++it)
-            {
-                if(!(**it == *messageSocket)) break; // Miguel approves
-                else i++;
-            }*/
-            for (int i = 0; i<toDelete; i++ )
-            {
+            int i = 0; // Indice del jugador a eliminar
+            while(it != clients.end() && !(**it == *messageSocket)){
                 ++it;
+                ++i;
             }
 
             if(it == clients.end()) std::cout << "Client not found\n";
             else { // Borramos al jugador manteniendo los turnos
-                
-                std::cout << it->get()->getIndex() << "\n";
+                (*it).reset();
                 clients.erase(it);
                 
 
                 if(clients.size() == 1) // Si solo queda un jugador, le sacamos de la partida
                 {
-                    /*for(auto it2 = clients.begin(); it2 != clients.end(); ++it2)
-                    {
-                         std::cout << **it2 << "\n";
-                    }*/
-
                     turn = -1;
                     message.newTurn = false;
-                    socket.send(message, **clients.begin());
+                    socket.send(message, *clients[0]);
                 }
-                else if(turn == toDelete){ // Si le tocaba al que se va, le toca al que ocupará su posición
+                else if(turn == i){ // Si le tocaba al que se va, le toca al que ocupará su posición
                     message.newTurn = true;
-                    it = clients.begin() + turn;
-                    socket.send(message, **it);
+                    if(turn < clients.size()) socket.send(message, *clients[turn]); // No era el último
+                    else socket.send(message, *clients[0]); // Era el último
                 }
-                else if(turn > toDelete) turn--; // El que tenía turno ha retrocedido una posición
+                else if(turn > i) turn--; // El que tenía turno ha retrocedido una posición
                 
             }
         }
@@ -237,26 +222,25 @@ void ChatClient::input_thread()
             if(msg == "start" || msg == "exit"){
                 choosing = false;
             }
-            else{
-                if(msg == "d"){
-                    if(cardPointer < myCards.size()) cardPointer++;
-                }
-                else if(msg == "a"){
-                    if(cardPointer > 0) cardPointer--;
-                }
-                else if(yourTurn && (msg == "s" || msg == "uno")){
-                    if(cardPointer == myCards.size()){
-                        if(!tryGettingCard()) error = "Puedes echar, no puedes robar";
-                    }
-                    else if(throwCard()) choosing = false;
-                    else error = "Imposible usar esta carta";
-                }
-                else {
-                    if(yourTurn) error = "Comando no reconocido";
-                    else error = "No es tu turno";
-                }
-                printGame(error);
+            else if(msg == "d"){
+                if(cardPointer < myCards.size()) cardPointer++;
             }
+            else if(msg == "a"){
+                if(cardPointer > 0) cardPointer--;
+            }
+            else if(yourTurn && (msg == "s" || msg == "uno")){
+                if(cardPointer == myCards.size()){
+                    if(!tryGettingCard()) error = "Puedes echar, no puedes robar";
+                }
+                else if(throwCard()) choosing = false;
+                else error = "Imposible usar esta carta";
+            }
+            else {
+                if(yourTurn) error = "Comando no reconocido";
+                else error = "No es tu turno";
+            }
+
+            if(playing) printGame(error);
             
         }
 
@@ -268,7 +252,7 @@ void ChatClient::input_thread()
             em.type = ChatMessage::BEGIN;
             
             // Generamos un topcard random
-            card top = generateCard();
+            card top = generateNumberCard();
             if(top.number > 9) { top.number = 9;} // Para evitar que salga cambio de color
             em.color = top.color;
             em.number = top.number;
@@ -338,6 +322,7 @@ void ChatClient::net_thread()
             else
             {
                 yourTurn = em.newTurn;
+                printGame("El jugador al que le tocaba ha abandonado la partida");
             }
             
             
@@ -359,12 +344,21 @@ void ChatClient::net_thread()
     }
 }
 
+card ChatClient::generateNumberCard(){
+    card aux = {rand()&10, rand()%4};
+    return aux;
+}
+
 card ChatClient::generateCard()
 {
-    // 0-11 value of the card, 0-3 value of the color
-    card aux = {rand()%12,rand()%4};
-    if(aux.number == 11) aux.color = 4;
-    return aux;
+    // PROBABILIDADES
+    // Cada número: 2/23     +2: 2/23     Cambio color: 1/23
+    int prob = rand()%22;
+    card c;
+    if(prob < 20) c = generateNumberCard(); // Número
+    else if(prob < 22) c = {10, rand()%4}; // +2
+    else c = {11, 4}; // Cambio de color
+    return c;
 }
 
 bool ChatClient::throwCard()
