@@ -81,6 +81,9 @@ void ChatServer::do_messages()
             std::cout << "LOGIN " << *messageSocket << "\n";
             std::unique_ptr<Socket> uptr = std::make_unique<Socket>(*messageSocket);
             messageSocket = nullptr;
+
+            uptr->setIndex(clients.size());
+            std::cout << clients.size() << "\n";
             clients.push_back(std::move(uptr));
            
         }
@@ -88,29 +91,44 @@ void ChatServer::do_messages()
         // - LOGOUT: Eliminar del vector clients
         else if(message.type == message.LOGOUT){
             std::cout << "LOGOUT " << *messageSocket << "\n";
-            auto it = clients.begin();
             
-            int i = 0; // Indice del jugador que ha salido
-            while(it != clients.end() && !(**it == *messageSocket)) {
+            int toDelete = (*messageSocket).getIndex();
+                    
+            auto it = clients.begin();
+            /*for(it; it != clients.end(); ++it)
+            {
+                if(!(**it == *messageSocket)) break; // Miguel approves
+                else i++;
+            }*/
+            for (int i = 0; i<toDelete; i++ )
+            {
                 ++it;
-                ++i;
             }
+
             if(it == clients.end()) std::cout << "Client not found\n";
             else { // Borramos al jugador manteniendo los turnos
                 
+                std::cout << it->get()->getIndex() << "\n";
                 clients.erase(it);
+                
+
                 if(clients.size() == 1) // Si solo queda un jugador, le sacamos de la partida
                 {
+                    /*for(auto it2 = clients.begin(); it2 != clients.end(); ++it2)
+                    {
+                         std::cout << **it2 << "\n";
+                    }*/
+
                     turn = -1;
-                    message.color = -1;
+                    message.newTurn = false;
                     socket.send(message, **clients.begin());
                 }
-                if(turn == i){ // Si le tocaba al que se va, le toca al que ocupará su posición
+                else if(turn == toDelete){ // Si le tocaba al que se va, le toca al que ocupará su posición
                     message.newTurn = true;
                     it = clients.begin() + turn;
                     socket.send(message, **it);
                 }
-                else if(turn > i) turn--; // El que tenía turno ha retrocedido una posición
+                else if(turn > toDelete) turn--; // El que tenía turno ha retrocedido una posición
                 
             }
         }
@@ -309,11 +327,20 @@ void ChatClient::net_thread()
 
             printGame("");
         }
-        if(em.type == ChatMessage::LOGOUT && em.color == -1) // Si alguien se sale y es un solo jugador, lo sacamos de la partida
+        if(em.type == ChatMessage::LOGOUT) // Si alguien se sale y es un solo jugador, lo sacamos de la partida
         {
-            std::cout << em.color << "\n";
-            playing == false;
-            printRules();
+            if(!em.newTurn)
+            {
+                yourTurn = false;
+                playing = false;
+                printRules();
+            }
+            else
+            {
+                yourTurn = em.newTurn;
+            }
+            
+            
         }     
         else if(em.type == ChatMessage::END) // Si termina el juego, el jugador no puede mandar mas cartas aunque lo intente
         {

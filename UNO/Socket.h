@@ -42,6 +42,7 @@ std::ostream& operator<<(std::ostream& os, const Socket& dt);
 class Socket
 {
 public:
+
     /**
      * El máximo teórico de un mensaje UDP es 2^16, del que hay que
      * descontar la cabecera UDP e IP (con las posibles opciones). Se debe
@@ -112,7 +113,8 @@ public:
 
     friend bool operator== (const Socket &s1, const Socket &s2);
 
-
+    uint8_t getIndex() { return index; }
+    void setIndex(uint8_t i) { index = i;}
 protected:
 
     /**
@@ -126,7 +128,7 @@ protected:
     struct sockaddr sa;
     socklen_t       sa_len;
 
-
+    uint8_t index = 1000;
 };
 
 #endif /* SOCKET_H_ */
