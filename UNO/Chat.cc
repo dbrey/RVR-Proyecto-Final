@@ -124,7 +124,7 @@ void ChatServer::do_messages()
             // Tener el turno desactivado simplemente impide que pueda enviar un tipo MESSAGE pero puede 
             // salir de la partida y moverse para seleccionar la siguiente carta
             
-            if(message.number == 14) // Cambiamos los turno
+            if(message.number == 14) // Cambiamos los turnos
             {
                 reverse = !reverse;
             }
@@ -144,8 +144,7 @@ void ChatServer::do_messages()
             else
             {
                 if(message.number != 13)
-                {
-                    //turn = (turn - 1) % clients.size();    
+                {    
                     turn--;
                     if(turn < 0) turn = clients.size() - 1;
                 }
@@ -399,8 +398,8 @@ card ChatClient::generateNumberCard(){
 card ChatClient::generateCard()
 {
     // PROBABILIDADES
-    // Cada número: 2/26     +2: 2/26     Cambio color: 1/26     +4 = 1/26     Saltar turno = 1/26     Reverse Card = 1/26
-    int prob = rand()%26;
+    // Cada número: 2/27     +2: 2/27     Cambio color: 1/27     +4 = 1/27     Saltar turno = 1/27     Reverse Card = 2/27
+    int prob = rand()%27;
     card c;
     if(prob < 20) c = generateNumberCard(); // Número
     else if(prob < 22) c = {10, rand()%4}; // +2
@@ -593,21 +592,25 @@ void ChatClient::printGame(std::string error){
             }
             else
             {
-                if(myCards.at(i).number == 10 || myCards.at(i).number == 12)
+                if(myCards.at(i).number == 10)
                 {
-                    std::cout << "| " << "+" << " |  "; // +2 cartas o +4 cartas y cambio de color
+                    std::cout << "| " << "+" << " |  "; // +2 cartas 
                 }
-                else if(myCards.at(i).number ==11)
+                else if(myCards.at(i).number == 11)
                 {
-                    std::cout << "| " << "-" << " |  "; // Cambio de color
+                    std::cout << "| " << "*" << " |  "; // Cambio de color
                 }
-                else if(myCards.at(i).number ==13)
+                else if(myCards.at(i).number == 12)
+                {
+                    std::cout << "| " << "#" << " |  "; // +4 cartas y cambio de color
+                }
+                else if(myCards.at(i).number == 13)
                 {
                     std::cout << "| " << "X" << " |  "; // Saltar turno
                 }
                 else if(myCards.at(i).number == 14)
                 {
-                    std::cout << "| " << "#" << " |  "; // Saltar turno
+                    std::cout << "| " << "~" << " |  "; // Saltar turno
                 }
             }
         }
