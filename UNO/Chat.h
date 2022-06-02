@@ -42,8 +42,8 @@ struct card {
         if (number < 10) c = number + '0'; // Suma el ASCII number al ASCII '0'
         else if (number == 10 || number == 12) c = '+';
         else if (number == 11) c = '-';
-        else if(number == 13) c = 'X';
-        else if(number == 14) c = '#';
+        else if (number == 13) c = 'X';
+        else if (number == 14) c = '#';
 
         switch (color)
         {
@@ -67,7 +67,6 @@ struct card {
         }
 
         // Diiujar la carta de forma especifica
-        std::cout << "\n";
         std::cout << "+---+ " << "\n";
         std::cout << "|   | " << "\n";
         std::cout << "| " << c << " | " << "\n";

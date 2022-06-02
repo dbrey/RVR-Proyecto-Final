@@ -334,6 +334,11 @@ void ChatClient::net_thread()
 
         if(em.type == ChatMessage::MESSAGE)
         {
+            if(!playing){
+                playing = true;
+                startGame();
+            }
+
             topCard.color = em.color;
             topCard.number = em.number;
             yourTurn = em.newTurn;
@@ -342,15 +347,16 @@ void ChatClient::net_thread()
                 if(topCard.number == 10)
                 {
                     getCard(2);
+                    printGame("Robaste 2 cartas");
                 }
                 else if(topCard.number == 12)
                 {
                     getCard(4);
+                    printGame("Robaste 4 cartas");
                 }
-                
+                else printGame("");
             }
-
-            printGame("");
+            else printGame("");
         }
         if(em.type == ChatMessage::LOGOUT) // Si alguien se sale y es un solo jugador, lo sacamos de la partida
         {
@@ -393,8 +399,8 @@ card ChatClient::generateNumberCard(){
 card ChatClient::generateCard()
 {
     // PROBABILIDADES
-    // Cada número: 2/27     +2: 2/27     Cambio color: 1/27    +4 = 1/27   Saltar turno = 1/27     Reverse Card = 1/27
-    int prob = rand()%27;
+    // Cada número: 2/26     +2: 2/26     Cambio color: 1/26     +4 = 1/26     Saltar turno = 1/26     Reverse Card = 1/26
+    int prob = rand()%26;
     card c;
     if(prob < 20) c = generateNumberCard(); // Número
     else if(prob < 22) c = {10, rand()%4}; // +2
@@ -514,7 +520,7 @@ void ChatClient::printRules(){
     std::cout << " - \e[1ms\e[0m para utilizar la carta seleccionada\n";
     std::cout << " - \e[1muno\e[0m cuando te quedes con una única carta\n\n";
 
-    std::cout << "\e[1mstart\e[0m para comenzar la partida\n\n";
+    std::cout << "\e[1mstart\e[0m para comenzar la partida y \e[1mexit\e[0m para salir\n\n";
 }
 
 void ChatClient::printEndGame(std::string winner){
@@ -530,11 +536,11 @@ void ChatClient::printExit(){
 
 void ChatClient::printGame(std::string error){
     system("clear"); // Comando para borrar la pantalla
-
-    std::cout << "MAZO: ";
+    if(yourTurn) std::cout << "Tu turno\n\n";
+    else std::cout << "No es tu turno\n\n";
+    std::cout << "MAZO:\n";
     topCard.print(); 
-    if(yourTurn) std::cout << "..............................Tu turno\n\n";
-    else std::cout << "..............................No es tu turno\n\n";
+    std::cout << "\nTUS CARTAS:\n";
 
     // Escribimos la parte superior de las cartas por color
     for(int i = 0; i< myCards.size()+1; i++)
