@@ -42,7 +42,8 @@ struct card {
         if (number < 10) c = number + '0'; // Suma el ASCII number al ASCII '0'
         else if (number == 10 || number == 12) c = '+';
         else if (number == 11) c = '-';
-
+        else if(number == 13) c = 'X';
+        else if(number == 14) c = '#';
 
         switch (color)
         {
@@ -139,6 +140,11 @@ private:
      * Le toca jugar a clients[turn]
      */
     int8_t turn = -1;
+
+    /**
+     *  Para revertir los turnos
+     */
+    bool reverse = false;
 
     /**
      * Socket del servidor

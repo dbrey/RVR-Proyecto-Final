@@ -124,7 +124,40 @@ void ChatServer::do_messages()
             // Tener el turno desactivado simplemente impide que pueda enviar un tipo MESSAGE pero puede 
             // salir de la partida y moverse para seleccionar la siguiente carta
             
-            turn = (turn + 1) % clients.size();          
+            if(message.number == 14) // Cambiamos los turno
+            {
+                reverse = !reverse;
+            }
+
+
+            if(!reverse) // Los turnos van moviendose del 1,2,3...
+            {
+                if(message.number != 13)
+                {
+                    turn = (turn + 1) % clients.size();    
+                }
+                else
+                {
+                    turn = (turn + 2) % clients.size();  // Saltar turno
+                }
+            }
+            else
+            {
+                if(message.number != 13)
+                {
+                    //turn = (turn - 1) % clients.size();    
+                    turn--;
+                    if(turn < 0) turn = clients.size() - 1;
+                }
+                else
+                {
+                    turn -= 2;  // Saltar turno
+                    if(turn == -1) turn = clients.size() - 1;
+                    else if(turn == -2) turn = clients.size()-2;
+                }
+            }
+            
+            
             for(auto it = clients.begin(); it != clients.end(); ++it)
             {
                 if(**it == *clients[turn])
@@ -353,28 +386,23 @@ void ChatClient::net_thread()
 }
 
 card ChatClient::generateNumberCard(){
-    card aux = {rand()&10, rand()%4};
+    card aux = {rand()%10, rand()%4};
     return aux;
 }
 
 card ChatClient::generateCard()
 {
     // PROBABILIDADES
-    // Cada número: 2/23     +2: 2/23     Cambio color: 1/23    +4 = 1/23
-    /*int prob = rand()%24;
+    // Cada número: 2/27     +2: 2/27     Cambio color: 1/27    +4 = 1/27   Saltar turno = 1/27     Reverse Card = 1/27
+    int prob = rand()%27;
     card c;
     if(prob < 20) c = generateNumberCard(); // Número
     else if(prob < 22) c = {10, rand()%4}; // +2
     else if(prob < 23) c = {11, 4}; // Cambio de color
-    else c = {12,4};*/ // +4
+    else if(prob < 24) c = {12, 4}; // +4
+    else if(prob < 25) c = {13, rand()%4}; // Saltar turno
+    else c = {14,rand()%4}; // Reverse card
     
-    
-    card c = {rand()%13,rand()%4};
-    if(c.number == 11 || c.number == 12)
-    {
-        c.color = 4;
-    }
-
     return c;
 }
 
@@ -559,15 +587,22 @@ void ChatClient::printGame(std::string error){
             }
             else
             {
-                if(myCards.at(i).number == 10 || myCards.at(i).number ==12)
+                if(myCards.at(i).number == 10 || myCards.at(i).number == 12)
                 {
-                    std::cout << "| " << "+" << " |  "; // +2 cartas
+                    std::cout << "| " << "+" << " |  "; // +2 cartas o +4 cartas y cambio de color
                 }
                 else if(myCards.at(i).number ==11)
                 {
                     std::cout << "| " << "-" << " |  "; // Cambio de color
                 }
-                
+                else if(myCards.at(i).number ==13)
+                {
+                    std::cout << "| " << "X" << " |  "; // Saltar turno
+                }
+                else if(myCards.at(i).number == 14)
+                {
+                    std::cout << "| " << "#" << " |  "; // Saltar turno
+                }
             }
         }
     }
