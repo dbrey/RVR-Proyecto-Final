@@ -175,7 +175,7 @@ private:
     /**
      * Para saber si se está jugando o no
      */
-    bool playing;
+    bool playing = false;
 
     /**
      * Para saber si te toca jugar o no
@@ -233,6 +233,12 @@ private:
     void printRules();
 
     /**
+     *  Imprime los símbolos de las cartas
+     */
+    void printSymbols();
+
+
+    /**
      *  Imprime pantalla fin de juego
      */
     void printEndGame(std::string winner);
@@ -250,7 +256,7 @@ private:
     /**
      *  Imprime las reglas del juego
      */
-    void printGame(std::string error);
+    void printGame(std::string error, bool e);
 
 public:
     /**

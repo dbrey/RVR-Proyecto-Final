@@ -245,34 +245,44 @@ void ChatClient::input_thread()
             error = "";
             std::getline(std::cin, msg);
 
+            bool commands = false;
             // SUMMARY
             // El jugador se mueve mandando mensajes 'a' y 'd'
             // EL jugador manda la carta mandando un mensaje 's' o si solo le queda 2 cartas, "uno"
             // Si el jugador selecciona la "carta" R (robar), roba 1 carta
             // Todo esto solo si es el turno del jugador
 
-            if(msg == "start" || msg == "exit"){
+            if(!playing && msg == "start"){
                 choosing = false;
             }
-            else if(msg == "d"){
-                if(cardPointer < myCards.size()) cardPointer++;
+            else if(msg == "exit"){
+                choosing = false;
             }
-            else if(msg == "a"){
-                if(cardPointer > 0) cardPointer--;
-            }
-            else if(yourTurn && (msg == "s" || msg == "uno")){
-                if(cardPointer == myCards.size()){
-                    if(!tryGettingCard()) error = "Puedes echar, no puedes robar";
+            if(playing){
+                if(msg == "d"){
+                    if(cardPointer < myCards.size()) cardPointer++;
                 }
-                else if(throwCard()) choosing = false;
-                else error = "Imposible usar esta carta";
-            }
-            else {
-                if(yourTurn) error = "Comando no reconocido";
-                else error = "No es tu turno";
-            }
+                else if(msg == "a"){
+                    if(cardPointer > 0) cardPointer--;
+                }
+                else if(msg == "c"){
+                    commands = true;
+                }
+                else if(yourTurn && (msg == "s" || msg == "uno")){
+                    if(cardPointer == myCards.size()){
+                        if(!tryGettingCard()) error = "Puedes echar, no puedes robar";
+                    }
+                    else if(throwCard()) choosing = false;
+                    else error = "Imposible usar esta carta";
+                }
+                else {
+                    if(yourTurn) error = "Comando no reconocido";
+                    else error = "No es tu turno";
+                }
 
-            if(playing) printGame(error);
+                printGame(error, true);
+                if(commands) printSymbols();
+            }
             
         }
 
@@ -346,16 +356,16 @@ void ChatClient::net_thread()
                 if(topCard.number == 10)
                 {
                     getCard(2);
-                    printGame("Robaste 2 cartas");
+                    printGame("Robaste 2 cartas", false);
                 }
                 else if(topCard.number == 12)
                 {
                     getCard(4);
-                    printGame("Robaste 4 cartas");
+                    printGame("Robaste 4 cartas", false);
                 }
-                else printGame("");
+                else printGame("", true);
             }
-            else printGame("");
+            else printGame("", true);
         }
         if(em.type == ChatMessage::LOGOUT) // Si alguien se sale y es un solo jugador, lo sacamos de la partida
         {
@@ -368,7 +378,7 @@ void ChatClient::net_thread()
             else
             {
                 yourTurn = em.newTurn;
-                printGame("El jugador al que le tocaba ha abandonado la partida");
+                printGame("El jugador al que le tocaba ha abandonado la partida", false);
             }
             
             
@@ -385,7 +395,7 @@ void ChatClient::net_thread()
             topCard.color = em.color;
             topCard.number = em.number;
             yourTurn = em.newTurn;
-            printGame("");
+            printGame("", true);
         }
     }
 }
@@ -436,7 +446,7 @@ bool ChatClient::checkCurrentCard(card* nextCard)
         std::string msg;
         std::getline(std::cin, msg);
         while(msg != "azul" && msg != "amarillo" && msg != "rojo" && msg != "verde"){
-            printGame("Color no reconocido");
+            printGame("Color no reconocido", true);
             std::cout << "Selecciona un color (azul, amarillo, rojo, verde) :" << "\n";
             std::getline(std::cin, msg);
         }
@@ -517,9 +527,18 @@ void ChatClient::printRules(){
     std::cout << " - El objetivo es lanzar una carta que coincida en número o color con la del mazo\n";
     std::cout << " - \e[1ma\e[0m y \e[1md\e[0m para desplazarte por tus cartas\n";
     std::cout << " - \e[1ms\e[0m para utilizar la carta seleccionada\n";
-    std::cout << " - \e[1muno\e[0m cuando te quedes con una única carta\n\n";
+    std::cout << " - \e[1muno\e[0m cuando te quedes con una única carta\n";
+    std::cout << " - \e[1mc\e[0m para mostrar la función de las cartas\n\n";
 
     std::cout << "\e[1mstart\e[0m para comenzar la partida y \e[1mexit\e[0m para salir\n\n";
+}
+
+void ChatClient::printSymbols(){
+    std::cout << "\e[1m";
+    std::cout << "  +           *              #              X             ~\n";
+    std::cout << "\e[0m";
+    std::cout << "roba 2      cambio        roba 4 y       salta el     cambio de\n";
+    std::cout << "           de color   cambio de color     turno        sentido\n\n";
 }
 
 void ChatClient::printEndGame(std::string winner){
@@ -533,7 +552,7 @@ void ChatClient::printExit(){
     std::cout << "Saliste de la partida" << "\n";
 }
 
-void ChatClient::printGame(std::string error){
+void ChatClient::printGame(std::string error, bool e){
     system("clear"); // Comando para borrar la pantalla
     if(yourTurn) std::cout << "Tu turno\n\n";
     else std::cout << "No es tu turno\n\n";
@@ -655,8 +674,12 @@ void ChatClient::printGame(std::string error){
         if(i != cardPointer) std::cout << "       ";
         else std::cout << "  *  ";
     }
-    std::cout << "\n";
-    if(error != "") std::cout << "\033[0;31m" << error << "\033[0m\n";
+    std::cout << "\n\n";
+    if(error != "") {
+        if(e) std::cout << "\033[0;31m";
+        else std::cout << "\033[0;36m";
+        std::cout << error << "\033[0m\n";
+    }
 }
 
 void ChatClient::changeColor(int c)
