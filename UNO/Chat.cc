@@ -304,9 +304,17 @@ void ChatClient::net_thread()
             topCard.color = em.color;
             topCard.number = em.number;
             yourTurn = em.newTurn;
-            if(yourTurn && topCard.number == 10) // Si le toca roba dos cartas
+            if(yourTurn) // Si le toca roba dos cartas
             {
-                getCard(2);
+                if(topCard.number == 10)
+                {
+                    getCard(2);
+                }
+                else if(topCard.number == 12)
+                {
+                    getCard(4);
+                }
+                
             }
 
             printGame("");
@@ -352,12 +360,21 @@ card ChatClient::generateNumberCard(){
 card ChatClient::generateCard()
 {
     // PROBABILIDADES
-    // Cada número: 2/23     +2: 2/23     Cambio color: 1/23
-    int prob = rand()%22;
+    // Cada número: 2/23     +2: 2/23     Cambio color: 1/23    +4 = 1/23
+    /*int prob = rand()%24;
     card c;
     if(prob < 20) c = generateNumberCard(); // Número
     else if(prob < 22) c = {10, rand()%4}; // +2
-    else c = {11, 4}; // Cambio de color
+    else if(prob < 23) c = {11, 4}; // Cambio de color
+    else c = {12,4};*/ // +4
+    
+    
+    card c = {rand()%13,rand()%4};
+    if(c.number == 11 || c.number == 12)
+    {
+        c.color = 4;
+    }
+
     return c;
 }
 
@@ -377,7 +394,7 @@ bool ChatClient::throwCard()
 
 bool ChatClient::checkCurrentCard(card* nextCard)
 {
-    if(nextCard->number == 11)
+    if(nextCard->number == 11 || nextCard->number == 12)
     {
         
         // Seleccionamos color preguntandole por input (y asi, automaticamente se lanza con el color ya elegido)
@@ -542,14 +559,15 @@ void ChatClient::printGame(std::string error){
             }
             else
             {
-                if(myCards.at(i).number ==10)
+                if(myCards.at(i).number == 10 || myCards.at(i).number ==12)
                 {
                     std::cout << "| " << "+" << " |  "; // +2 cartas
                 }
-                else
+                else if(myCards.at(i).number ==11)
                 {
                     std::cout << "| " << "-" << " |  "; // Cambio de color
                 }
+                
             }
         }
     }
